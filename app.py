@@ -11,7 +11,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 messages = []
 
 # 👇 진짜 주인님만 아는 비밀번호 (너만 알고 있어야 해!)
-ADMIN_PASSWORD = "#1234"
+ADMIN_PASSWORD = "#064473"
 
 @app.route('/')
 def index():
@@ -59,3 +59,4 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
