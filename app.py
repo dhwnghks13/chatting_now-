@@ -1,3 +1,4 @@
+# 1. 이 두 줄은 무조건 맨 위에! (순서 바꾸지 마)
 import eventlet
 eventlet.monkey_patch()
 
@@ -5,8 +6,10 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'mysecret' # 보안 키 (아무거나 적어도 됨)
-socketio = SocketIO(app, cors_allowed_origins="*") # 중요: 다른 주소 접속 허용!
+app.config['SECRET_KEY'] = 'secret'
+
+# 2. cors_allowed_origins="*" <-- 이게 없으면 채팅 안 됨! 필수!
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 @app.route('/')
 def index():
@@ -14,10 +17,8 @@ def index():
 
 @socketio.on('message')
 def handle_message(msg):
-    print(f"메시지: {msg}")
+    print(f"서버가 받은 메시지: {msg}") # 로그 확인용
     socketio.send(msg, broadcast=True)
 
 if __name__ == '__main__':
-    # 서버에서는 이 부분 대신 gunicorn을 쓸 거라 괜찮지만,
-    # 로컬 테스트용으로 남겨둬.
     socketio.run(app, debug=True)
