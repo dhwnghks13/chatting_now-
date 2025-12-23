@@ -3,69 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>사남초4-1채팅방</title>
+    <title>채팅방 4-1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    
     <style>
-        /* 간단한 디자인 */
-        #chatBox {
-            width: 100%;
-            height: 300px;
-            border: 1px solid #ccc;
-            overflow-y: scroll;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
+        body { padding: 20px; font-family: sans-serif; }
+        #chatBox { height: 400px; border: 1px solid #ccc; overflow-y: scroll; padding: 10px; margin-bottom: 10px; }
+        input { width: 70%; padding: 10px; }
+        button { width: 20%; padding: 10px; }
     </style>
 </head>
 <body>
-    <h1>실시간 채팅방 '4-1'</h1>
-
+    <h1>4-1 채팅방</h1>
     <div id="chatBox"></div>
-
-    <input type="text" id="chatInput" placeholder="메시지 입력..." onkeypress="handleEnter(event)">
-    <button onclick="sendMessage()">전송</button>
+    
+    <input type="text" id="chatInput" placeholder="인사말을 건네보세요...">
+    <button onclick="sendMyMessage()">전송</button>
 
     <script>
-        var socket = io(); // 서버 연결
-        // 👇 [추가] 연결되면 알려줘!
-    socket.on('connect', function() {
-        console.log("서버 연결 성공!");
-        alert("서버와 연결되었습니다! 채팅을 시작하세요.");
-    });
+        // 👇 transprot 옵션 강제 지정 (연결 안정성 UP)
+        var socket = io({transports: ['websocket', 'polling']});
 
-    // 👇 [추가] 연결 끊기면 알려줘!
-    socket.on('disconnect', function() {
-        console.log("서버 연결 끊김 ㅠㅠ");
-    });
+        // 1. 연결 확인
+        socket.on('connect', function() {
+            console.log("✅ 접속 성공!");
+        });
 
-        // 1. 메시지 보내기 함수
-        function sendMessage() {
+        // 2. 메시지 보내기 함수 (이름 바꿈: sendMyMessage)
+        function sendMyMessage() {
             var input = document.getElementById('chatInput');
             var msg = input.value;
-            
-            if(msg.trim() !== "") { // 빈 칸이 아닐 때만 전송
-                socket.send(msg);   // 서버로 발사!
-                input.value = "";   // 입력창 비우기
+
+            // 👇 버튼 누르면 이게 무조건 콘솔에 찍혀야 함!
+            console.log("버튼 클릭됨! 보낼 내용: " + msg); 
+
+            if(msg.trim() !== "") {
+                // [변경] send 대신 emit 사용! ('my_chat' 채널로 쏨)
+                socket.emit('my_chat', msg); 
+                input.value = "";
+            } else {
+                console.log("빈 칸이라 전송 안 함");
             }
         }
 
-        // (보너스) 엔터키 쳐도 전송되게 하기
-        function handleEnter(e) {
-            if (e.keyCode === 13) {
-                sendMessage();
-            }
-        }
-
-        // 2. 서버가 메시지 뿌려주면 받기
-        socket.on('message', function(msg) {
+        // 3. 서버로부터 메시지 받기 ('my_chat' 채널 감시)
+        socket.on('my_chat', function(msg) {
+            console.log("📩 서버에서 답장 옴: " + msg);
             var chatBox = document.getElementById('chatBox');
-            // 새 메시지 추가
-            chatBox.innerHTML += "<p>" + msg + "</p>"; 
-            // 스크롤 맨 아래로 내리기
+            chatBox.innerHTML += "<p>" + msg + "</p>";
             chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        // 엔터키 처리
+        document.getElementById("chatInput").addEventListener("keyup", function(event) {
+            if (event.key === "Enter") {
+                sendMyMessage();
+            }
         });
     </script>
 </body>
 </html>
-
