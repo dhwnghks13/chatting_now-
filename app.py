@@ -19,23 +19,24 @@ def index():
 def handle_connect():
     print("누군가 접속했습니다!", flush=True)
     
-    # 1. 들어온 사람한테 지난 대화 내용 보여주기 (개인 귓속말)
-    for msg in messages:
-        emit('my_chat', msg)
+    # 1. 들어온 사람한테 지난 대화 보여주기
+    for data in messages:
+        emit('my_chat', data)
 
-    # 2. [추가된 기능] 모든 사람에게 입장 알림 쏘기! (방송)
-    emit('my_chat', "👋 새로운 분이 입장하셨습니다!", broadcast=True)
+    # 2. 입장 알림 (이름을 '📢 알림'으로 설정해서 보냄)
+    emit('my_chat', {'name': '📢 알림', 'msg': '👋 새로운 분이 입장하셨습니다!'}, broadcast=True)
 
 @socketio.on('my_chat')
 def handle_my_chat(data):
-    print(f"받은 메시지: {data}", flush=True)
+    # data는 이제 {'name': '닉네임', 'msg': '내용'} 형태의 덩어리임
+    print(f"받은 데이터: {data}", flush=True)
     
     # 메시지 저장
     messages.append(data)
     
-    # 3. [추가된 기능] 기억 제한을 150개로 늘림!
+    # 기억력 제한 (150개)
     if len(messages) > 150:
-        messages.pop(0) # 150개 넘으면 제일 옛날 거 삭제
+        messages.pop(0) 
         
     emit('my_chat', data, broadcast=True)
 
