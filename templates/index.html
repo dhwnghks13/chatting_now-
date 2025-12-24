@@ -3,14 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💬 채팅방</title>
+    <title>오주환의 채팅방</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        /* --- 디자인 영역 (파란색 간지 버전 유지) --- */
         body { padding: 20px; font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #f0f2f5; }
         
+        /* 👇 접속자 명단 박스 추가 (새로 생긴 부분) */
+        #userStatus {
+            background-color: #fff; padding: 10px 15px; border-radius: 10px;
+            margin-bottom: 10px; border: 1px solid #ddd; color: #555; font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        #userStatus strong { color: #2196f3; } /* 숫자 파란색 강조 */
+
         #chatBox { 
-            height: 500px; background: white; border: 1px solid #ddd; 
+            height: 450px; background: white; border: 1px solid #ddd; 
             border-radius: 15px; overflow-y: scroll; padding: 20px; 
             margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
         }
@@ -23,23 +30,20 @@
             border: none; border-radius: 8px; cursor: pointer; font-weight: bold; 
         }
         button:hover { background: #1976d2; }
-        button:disabled { background: #ccc; cursor: not-allowed; } /* 강퇴당하면 버튼 회색됨 */
+        button:disabled { background: #ccc; cursor: not-allowed; }
 
         .msg-box { margin-bottom: 12px; }
-
-        /* 1. 시스템 알림 */
         .system { text-align: center; margin: 20px 0; }
         .system span { background-color: #eee; color: #666; padding: 5px 15px; border-radius: 20px; font-size: 12px; }
 
-        /* 2. 일반인 */
+        /* 일반인 */
         .normal .nickname { font-weight: bold; color: #555; margin-right: 5px; }
-        .normal .message { background-color: #e9efff; padding: 10px 15px; border-radius: 0 15px 15px 15px; display: inline-block; color: #333; }
+        .normal .message { background-color: #e9efff; padding: 10px 15px; border-radius: 0 15px 15px 15px; display: inline-block; }
 
-        /* 👑 3. 관리자 (오주환 공식 인증 블루) */
+        /* 👑 오주환 대장 (파란색) */
         .admin { 
             background-color: #e3f2fd; border: 2px solid #2196f3; 
-            border-radius: 10px; padding: 10px; box-shadow: 0 2px 5px rgba(33, 150, 243, 0.2); 
-            display: inline-block; 
+            border-radius: 10px; padding: 10px; display: inline-block; 
         }
         .admin .nickname { color: #0d47a1; font-weight: 900; font-size: 16px; display: block; margin-bottom: 5px; }
         .admin .nickname::after { content: " ✔️(Official)"; color: #2196f3; font-size: 14px; }
@@ -47,8 +51,10 @@
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #333;">💬 채팅방</h1>
+    <h1 style="text-align: center; color: #333;">💬 오주환의 채팅방</h1>
     
+    <div id="userStatus">현재 접속자: <strong>0명</strong> (로딩중...)</div>
+
     <div id="chatBox"></div>
     
     <div class="input-container">
@@ -72,9 +78,38 @@
             }
         }
 
-        function handleEnter(e) {
-            if (e.key === "Enter") sendMyMessage();
-        }
+        function handleEnter(e) { if (e.key === "Enter") sendMyMessage(); }
 
-        // 👇 [중요
+        // 1. 메시지 받기
+        socket.on('my_chat', function(data) {
+            var chatBox = document.getElementById('chatBox');
+            var html = "";
 
+            if (data.role === 'system') {
+                html = `<div class='system'><span>${data.msg}</span></div>`;
+            } else if (data.role === 'admin') {
+                html = `<div style="text-align: right;"><div class='msg-box admin'><span class='nickname'>${data.name}</span><span class='message'>${data.msg}</span></div></div>`;
+            } else {
+                html = `<div class='msg-box normal'><span class='nickname'>${data.name}:</span><span class='message'>${data.msg}</span></div>`;
+            }
+            chatBox.innerHTML += html;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        // 👇 2. [신기능] 접속자 명단 업데이트 받기
+        socket.on('update_users', function(data) {
+            var statusDiv = document.getElementById('userStatus');
+            var userNames = data.users.join(", "); // 이름들을 쉼표로 연결
+            statusDiv.innerHTML = `현재 접속자: <strong>${data.count}명</strong> (${userNames})`;
+        });
+
+        // 3. 강퇴 당했을 때
+        socket.on('disconnect', function() {
+            var chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML += "<div class='system' style='color:red; font-weight:bold;'>🚫 연결이 끊어졌습니다. (새로고침 하세요)</div>";
+            document.getElementById('chatInput').disabled = true;
+            document.querySelector('button').disabled = true;
+        });
+    </script>
+</body>
+</html>
