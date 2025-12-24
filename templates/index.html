@@ -3,86 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>채팅방</title>
+    <title>오주환의 채팅방</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        body { padding: 20px; font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #f0f2f5; }
-        h1 { text-align: center; color: #333; }
+        /* 기본 폰트 및 배경 */
+        body { padding: 20px; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; background-color: #f0f2f5; }
         
+        /* 채팅 박스 디자인 */
         #chatBox { 
             height: 500px; 
             background: white;
             border: 1px solid #ddd; 
-            border-radius: 10px;
+            border-radius: 15px; /* 둥글게 */
             overflow-y: scroll; 
-            padding: 15px; 
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px; 
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* 그림자 좀 더 고급스럽게 */
         }
 
-        /* 채팅 메시지 스타일 */
-        .msg-box { margin-bottom: 10px; }
-        .nickname { font-weight: bold; color: #555; font-size: 14px; margin-right: 5px; }
-        .message { background-color: #e9efff; padding: 5px 10px; border-radius: 8px; display: inline-block; }
-        .system { color: #888; text-align: center; font-size: 13px; margin: 10px 0; }
-
-        /* 입력창 스타일 */
+        /* 입력창 디자인 */
         .input-container { display: flex; gap: 10px; }
-        #nickname { width: 20%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
-        #chatInput { width: 60%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
-        button { width: 20%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #0056b3; }
+        #nickname { width: 20%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+        #chatInput { width: 60%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+        button { 
+            width: 20%; padding: 12px; 
+            background: #2196f3; /* 시원한 파란색 */
+            color: white; border: none; border-radius: 8px; 
+            cursor: pointer; font-weight: bold; transition: 0.3s; 
+        }
+        button:hover { background: #1976d2; }
+
+        /* 메시지 박스 공통 */
+        .msg-box { margin-bottom: 12px; }
+
+        /* 1. 시스템 알림 */
+        .system { text-align: center; margin: 20px 0; }
+        .system span { 
+            background-color: #eee; color: #666; 
+            padding: 5px 15px; border-radius: 20px; font-size: 12px; 
+        }
+
+        /* 2. 일반인 (평범함) */
+        .normal .nickname { font-weight: bold; color: #555; margin-right: 5px; }
+        .normal .message { 
+            background-color: #e9efff; padding: 10px 15px; 
+            border-radius: 0 15px 15px 15px; /* 말풍선 모양 */
+            display: inline-block; color: #333;
+        }
+
+        /* 👑 3. 개발자(오주환) 전용 디자인 (수정됨: 생존형 간지) */
+        .admin { 
+            background-color: #e3f2fd; /* 아주 연한 하늘색 배경 */
+            border: 2px solid #2196f3; /* 쨍한 파란색 테두리 (신뢰의 색) */
+            border-radius: 10px; 
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(33, 150, 243, 0.2); /* 파란 그림자 */
+            display: inline-block; /* 박스 크기 내용에 맞춤 */
+        }
+        
+        .admin .nickname { 
+            color: #0d47a1; /* 아주 진한 남색 (가독성 좋음) */
+            font-weight: 900; 
+            font-size: 16px;
+            display: block; /* 이름 한 줄 차지 */
+            margin-bottom: 5px;
+        }
+        
+        /* 이름 옆에 붙는 뱃지 */
+        .admin .nickname::after { 
+            content: " ✔️(Official)"; /* 공식 인증 마크 느낌 */
+            color: #2196f3; 
+            font-size: 14px;
+        }
+
+        .admin .message { 
+            color: #333; 
+            font-weight: bold; 
+            font-size: 18px; /* 글씨 큼 */
+        }
     </style>
 </head>
 <body>
-    <h1>채팅방4-1<h1>
+    <h1 style="text-align: center; color: #333;">💬 네이버 가고 싶은 채팅방</h1>
     
     <div id="chatBox"></div>
     
     <div class="input-container">
         <input type="text" id="nickname" placeholder="닉네임" value="익명">
-        <input type="text" id="chatInput" placeholder="내용을 입력하세요...">
+        <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)">
         <button onclick="sendMyMessage()">전송</button>
     </div>
 
     <script>
         var socket = io({transports: ['websocket', 'polling']});
 
-        // 1. 메시지 보내기
         function sendMyMessage() {
             var nick = document.getElementById('nickname').value;
             var input = document.getElementById('chatInput');
             var msg = input.value;
 
             if(msg.trim() !== "") {
-                // 👇 이름과 메시지를 묶어서 보냄 (JSON 객체)
-                var data = { name: nick, msg: msg };
-                socket.emit('my_chat', data); 
+                socket.emit('my_chat', { name: nick, msg: msg });
                 input.value = "";
             }
         }
 
-        // 2. 메시지 받기 (이름 + 내용 분리해서 보여줌)
+        function handleEnter(e) {
+            if (e.key === "Enter") sendMyMessage();
+        }
+
         socket.on('my_chat', function(data) {
             var chatBox = document.getElementById('chatBox');
-            
-            // 알림 메시지인 경우 디자인 다르게
-            if(data.name === '📢 알림') {
-                chatBox.innerHTML += `<div class='system'>${data.msg}</div>`;
+            var html = "";
+
+            if (data.role === 'system') {
+                html = `<div class='system'><span>${data.msg}</span></div>`;
+            } else if (data.role === 'admin') {
+                // 대장님 디자인
+                html = `
+                    <div style="text-align: right;"> <div class='msg-box admin'>
+                            <span class='nickname'>${data.name}</span>
+                            <span class='message'>${data.msg}</span>
+                        </div>
+                    </div>`;
             } else {
-                // 일반 메시지 (닉네임 굵게 표시)
-                chatBox.innerHTML += `
-                    <div class='msg-box'>
+                // 일반인 디자인
+                html = `
+                    <div class='msg-box normal'>
                         <span class='nickname'>${data.name}:</span>
                         <span class='message'>${data.msg}</span>
                     </div>`;
             }
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
 
-        // 엔터키 기능
-        document.getElementById("chatInput").addEventListener("keyup", function(event) {
-            if (event.key === "Enter") sendMyMessage();
+            chatBox.innerHTML += html;
+            chatBox.scrollTop = chatBox.scrollHeight;
         });
     </script>
 </body>
