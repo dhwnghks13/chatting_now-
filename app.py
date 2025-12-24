@@ -10,7 +10,7 @@ app.config['SECRET_KEY'] = 'secret'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 messages = []
-ADMIN_PASSWORD = "#1234" # 🔑 관리자 비밀번호
+ADMIN_PASSWORD = "#064473" # 🔑 관리자 비밀번호
 users = {} # {소켓ID : 닉네임} 저장소
 
 @app.route('/')
@@ -89,3 +89,4 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
