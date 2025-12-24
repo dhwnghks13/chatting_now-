@@ -115,17 +115,7 @@
         socket.on('my_chat', function(data) {
             var chatBox = document.getElementById('chatBox');
             var html = "";
-            socket.on('disconnect', function() {
-            var chatBox = document.getElementById('chatBox');
-            chatBox.innerHTML += "<div class='system' style='color:red; font-weight:bold;'>🚫 서버와의 연결이 끊어졌습니다. (강퇴당했을 수 있음)</div>";
-            chatBox.scrollTop = chatBox.scrollHeight;
-            
-            // 입력창 잠그기 (더 이상 채팅 못 치게)
-            document.getElementById('chatInput').disabled = true;
-            document.getElementById('nickname').disabled = true;
-            document.querySelector('button').disabled = true;
-            
-            alert("서버와 연결이 끊어졌습니다.");
+
 
             if (data.role === 'system') {
                 html = `<div class='system'><span>${data.msg}</span></div>`;
@@ -149,8 +139,20 @@
             chatBox.innerHTML += html;
             chatBox.scrollTop = chatBox.scrollHeight;
         });
+                    socket.on('disconnect', function() {
+            var chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML += "<div class='system' style='color:red; font-weight:bold;'>🚫 서버와의 연결이 끊어졌습니다. (강퇴당했을 수 있음)</div>";
+            chatBox.scrollTop = chatBox.scrollHeight;
+            
+            // 입력창 잠그기 (더 이상 채팅 못 치게)
+            document.getElementById('chatInput').disabled = true;
+            document.getElementById('nickname').disabled = true;
+            document.querySelector('button').disabled = true;
+            
+            alert("서버와 연결이 끊어졌습니다.");
     </script>
 </body>
 </html>
+
 
 
