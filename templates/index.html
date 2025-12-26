@@ -79,6 +79,12 @@
             }
         }
 
+        if(nick.trim() === "") {
+            alert("닉네임을 왜 입력하지 않았지?")
+            nickInput.focus();
+            return
+        }
+
         function handleEnter(e) { if (e.key === "Enter") sendMyMessage(); }
 
         // 1. 메시지 받기
@@ -114,5 +120,6 @@
     </script>
 </body>
 </html>
+
 
 
