@@ -10,14 +10,15 @@ app.config['SECRET_KEY'] = 'secret'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 messages = []
-ADMIN_PASSWORD = "#1234" # 🔑 관리자 비밀번호
-users = {} # {소켓ID : 닉네임} 저장소
+
+# 👇 [수정 완료] 이제 진짜 비밀번호는 '#064473'
+ADMIN_PASSWORD = "#064473" 
+users = {} 
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# 접속자 명단 방송 함수
 def broadcast_user_list():
     user_list = list(users.values())
     count = len(users)
@@ -27,10 +28,8 @@ def broadcast_user_list():
 def handle_connect():
     users[request.sid] = "익명"
     broadcast_user_list()
-    
     for data in messages:
         emit('my_chat', data)
-    
     emit('my_chat', {'role': 'system', 'msg': '👋 새로운 분이 입장하셨습니다!'}, broadcast=True)
 
 @socketio.on('disconnect')
@@ -48,42 +47,42 @@ def handle_my_chat(data):
     role = 'normal'
     real_name = original_name
 
-    # 1. 관리자 인증
+    # ==========================================
+    # 👑 1. 관리자 권한 심사 (비밀번호 #064473)
+    # ==========================================
     if ADMIN_PASSWORD in original_name:
         if "오주환" in original_name:
-            role = 'admin'
-            real_name = "오주환"
+            role = 'admin'     # 합격!
+            real_name = "오주환" # 화면에는 비번 떼고 보여줌
+            
     elif original_name.strip() == "오주환":
         role = 'normal'
-        real_name = "사칭범 오주환"
+        real_name = "사칭범 오주환" 
 
-    # 2. 명단 업데이트
+    print(f"[로그] 입력닉네임: {original_name} -> 권한: {role}", flush=True)
+
     users[request.sid] = real_name 
     broadcast_user_list()
 
-    # ======================================================
-    # 🔥 3. 강퇴 기능 (개별 강퇴 + 전체 강퇴 추가됨!)
-    # ======================================================
+    # ==========================================
+    # 💥 2. 타노스 & 강퇴 기능 (/강퇴 all)
+    # ==========================================
     if role == 'admin' and msg.startswith("/강퇴 "):
         try:
-            target_name = msg.split(" ")[1] # "/강퇴" 뒤에 쓴 단어 가져오기
+            target_name = msg.split(" ")[1]
             
-            # 🛑 [타노스 모드] /강퇴 all 입력 시
+            # [타노스 모드] 방 폭파
             if target_name == "all":
-                # 현재 접속한 모든 소켓 ID를 가져옴
                 all_sids = list(users.keys())
-                
                 for sid in all_sids:
-                    # 나(관리자)는 강퇴하면 안 되니까 제외!
-                    if sid != request.sid:
-                        disconnect(sid) # 너 나가 ✂️
+                    if sid != request.sid: 
+                        disconnect(sid)
                 
-                # 처형 완료 메시지
                 noti = {'role': 'system', 'msg': '☢️ 관리자가 모든 사용자를 강퇴시켰습니다! (방 폭파)'}
                 emit('my_chat', noti, broadcast=True)
-                return # 여기서 끝냄
+                return 
 
-            # 🔫 [일반 모드] /강퇴 닉네임 입력 시
+            # [일반 강퇴] 한 명 저격
             else:
                 target_sid = None
                 for sid, nickname in users.items():
@@ -97,9 +96,8 @@ def handle_my_chat(data):
                     emit('my_chat', noti, broadcast=True)
                     return 
         except:
-            pass # 명령어 실수하면 무시
+            pass
 
-    # 4. 일반 메시지 전송
     response_data = {'name': real_name, 'msg': msg, 'role': role}
     messages.append(response_data)
     if len(messages) > 150:
