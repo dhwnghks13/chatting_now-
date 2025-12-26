@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💬 채팅방</title>
+    <title>오주환의 채팅방</title>
     <link rel="shortcut icon" href="{{ url_for('static', filename='icon.png') }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
         body { padding: 20px; font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #f0f2f5; }
         
-        /* 👇 접속자 명단 박스 추가 (새로 생긴 부분) */
+        /* 접속자 명단 박스 */
         #userStatus {
             background-color: #fff; padding: 10px 15px; border-radius: 10px;
             margin-bottom: 10px; border: 1px solid #ddd; color: #555; font-size: 14px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        #userStatus strong { color: #2196f3; } /* 숫자 파란색 강조 */
+        #userStatus strong { color: #2196f3; }
 
         #chatBox { 
             height: 450px; background: white; border: 1px solid #ddd; 
@@ -37,11 +37,10 @@
         .system { text-align: center; margin: 20px 0; }
         .system span { background-color: #eee; color: #666; padding: 5px 15px; border-radius: 20px; font-size: 12px; }
 
-        /* 일반인 */
         .normal .nickname { font-weight: bold; color: #555; margin-right: 5px; }
         .normal .message { background-color: #e9efff; padding: 10px 15px; border-radius: 0 15px 15px 15px; display: inline-block; }
 
-        /* 👑 오주환 대장 (파란색) */
+        /* 👑 오주환 대장 */
         .admin { 
             background-color: #e3f2fd; border: 2px solid #2196f3; 
             border-radius: 10px; padding: 10px; display: inline-block; 
@@ -52,14 +51,14 @@
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #333;">💬 채팅방</h1>
+    <h1 style="text-align: center; color: #333;">💬 오주환의 채팅방</h1>
     
     <div id="userStatus">현재 접속자: <strong>0명</strong> (로딩중...)</div>
 
     <div id="chatBox"></div>
     
     <div class="input-container">
-        <input type="text" id="nickname" placeholder="닉네임" value="익명">
+        <input type="text" id="nickname" placeholder="닉네임(필수)" value="">
         <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)">
         <button onclick="sendMyMessage()">전송</button>
     </div>
@@ -73,21 +72,22 @@
             var msg = chatInput.value;
             var nick = nickInput.value;
 
+            // 👇 [여기!] 닉네임 검사 기능 추가
+            // trim()은 앞뒤 공백을 다 잘라내는 함수야.
+            if (nick.trim() === "") {
+                alert("🚨 닉네임을 꼭 입력해야 합니다!");
+                nickInput.focus(); // 닉네임 칸으로 커서 이동시켜줌 (친절함)
+                return; // 함수 여기서 강제 종료! (서버로 데이터 안 보냄)
+            }
+
             if(msg.trim() !== "") {
                 socket.emit('my_chat', { name: nick, msg: msg });
                 chatInput.value = "";
             }
         }
 
-        if(nick.trim() === "") {
-            alert("닉네임을 왜 입력하지 않았지?")
-            nickInput.focus();
-            return
-        }
-
         function handleEnter(e) { if (e.key === "Enter") sendMyMessage(); }
 
-        // 1. 메시지 받기
         socket.on('my_chat', function(data) {
             var chatBox = document.getElementById('chatBox');
             var html = "";
@@ -103,14 +103,12 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         });
 
-        // 👇 2. [신기능] 접속자 명단 업데이트 받기
         socket.on('update_users', function(data) {
             var statusDiv = document.getElementById('userStatus');
-            var userNames = data.users.join(", "); // 이름들을 쉼표로 연결
+            var userNames = data.users.join(", ");
             statusDiv.innerHTML = `현재 접속자: <strong>${data.count}명</strong> (${userNames})`;
         });
 
-        // 3. 강퇴 당했을 때
         socket.on('disconnect', function() {
             var chatBox = document.getElementById('chatBox');
             chatBox.innerHTML += "<div class='system' style='color:red; font-weight:bold;'>🚫 연결이 끊어졌습니다. (새로고침 하세요)</div>";
@@ -120,6 +118,3 @@
     </script>
 </body>
 </html>
-
-
-
