@@ -64,6 +64,14 @@
     <script>
         var socket = io({transports: ['websocket', 'polling']});
 
+        function linkify(text) {
+            var urlRegex = /(https?:\/\/[^\s]+)/g;
+            return text.replace(urlRegex, function(url) {
+                // target="_blank"는 새 창에서 열리게 하는 옵션
+                return '<a href="' + url + '" target="_blank">' + url + '</a>';
+            });
+        }
+        
         function sendMyMessage() {
             var nickInput = document.getElementById('nickname');
             var chatInput = document.getElementById('chatInput');
@@ -129,6 +137,7 @@
     </script>
 </body>
 </html>
+
 
 
 
