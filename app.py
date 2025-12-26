@@ -122,6 +122,8 @@ def handle_my_chat(data):
                 'msg': f"📢 [공지사항] {content}" 
             }
             emit('my_chat', noti, broadcast=True)
+            print("시스템: 관리자 권한으로 공지 전송 완료", flush=True)
+            return
         except:
             pass
 
@@ -137,4 +139,5 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
 
