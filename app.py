@@ -27,7 +27,7 @@ def send_survey():
         socketio.sleep(180) 
         
         # 설문조사 링크 (여기에 네 링크를 넣어!)
-        survey_link = "https://forms.google.com/your-survey-url"
+        survey_link = "https://naver.me/5ixdyLOe"
         
         # 시스템 메시지로 전송
         noti = {
@@ -113,7 +113,16 @@ def handle_my_chat(data):
                     return 
         except:
             pass
-
+    if role === 'admin and msg == "/설문"
+        survey_link = "https://naver.me/5ixdyLOe"
+        
+        # 시스템 메시지로 전송
+        noti = {
+            'role': 'system', 
+            'msg': f'📋 잠깐! 더 좋은 채팅방을 위해 설문에 참여해주세요.\n{survey_link}'
+        }
+        socketio.emit('my_chat', noti)
+        print("시스템: 관리자 명령으로 설문 링크 전송 완료", flush=True)
     response_data = {'name': real_name, 'msg': msg, 'role': role}
     messages.append(response_data)
     if len(messages) > 150:
@@ -123,3 +132,4 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
