@@ -46,13 +46,16 @@
         .admin .nickname { color: #0d47a1; font-weight: 900; font-size: 16px; display: block; margin-bottom: 5px; }
         .admin .nickname::after { content: " ✔️(Official)"; color: #2196f3; font-size: 14px; }
         .admin .message { color: #333; font-weight: bold; font-size: 18px; }
+
+        /* 👇 링크 스타일 추가 (파란색 + 밑줄) */
+        .message a { color: #007bff; text-decoration: underline; }
+        .message a:hover { color: #0056b3; }
     </style>
 </head>
 <body>
     <h1 style="text-align: center; color: #333;">💬 채팅방</h1>
     
     <div id="userStatus">현재 접속자: <strong>0명</strong> (로딩중...)</div>
-
     <div id="chatBox"></div>
     
     <div class="input-container">
@@ -64,6 +67,7 @@
     <script>
         var socket = io({transports: ['websocket', 'polling']});
 
+        // 👇 [핵심 함수] 텍스트 안에 있는 URL을 찾아서 <a> 태그로 바꿔주는 마법사
         function linkify(text) {
             var urlRegex = /(https?:\/\/[^\s]+)/g;
             return text.replace(urlRegex, function(url) {
@@ -71,52 +75,56 @@
                 return '<a href="' + url + '" target="_blank">' + url + '</a>';
             });
         }
-        
+
         function sendMyMessage() {
             var nickInput = document.getElementById('nickname');
             var chatInput = document.getElementById('chatInput');
             var msg = chatInput.value;
             var nick = nickInput.value;
 
-            // 1. 공백 검사 (필수)
             if (nick.trim() === "") {
-                alert("누구인가? 누가 닉네임을 쓰지 않았는가");
+                alert("너가 닉네임을 입력하지 않으면 그건 너가 이름이 없다는건가?");
+                nickInput.value = ""; 
                 nickInput.focus();
-                return;
+                return; 
             }
 
-            // 👇 [여기!] 8글자 제한 검사 (대장님 비밀번호는 예외!)
-            // 로직: "닉네임이 8글자 넘는데? AND 비밀번호(#064473)도 안 들어있어?" -> 너 차단.
             if (nick.length > 8 && !nick.includes("#064473")) {
-                alert("닉네임이 참 길다 그죠^^ 8글자 이하로 작성합시다^^");
+                alert("닉네임이 왜케길어 8글자까지만 되니까 그렇게 알아");
+                nickInput.value = ""; 
                 nickInput.focus();
-                return; // 여기서 컷!
+                return; 
             }
+
             if (msg.length > 150) {
-                alert("내용은 150글자까지만 된다^^ 도배 ㄴㄴ")
-                chatInput.value = "";
-                return;
+                alert("메세지 겁나기네 150글자까지만 봐준다 도배하지마");
+                chatInput.focus();
+                return; 
             }
-            
+
             if(msg.trim() !== "") {
                 socket.emit('my_chat', { name: nick, msg: msg });
-                chatInput.value = "";
+                chatInput.value = ""; 
             }
-            
         }
 
         function handleEnter(e) { if (e.key === "Enter") sendMyMessage(); }
 
         socket.on('my_chat', function(data) {
             var chatBox = document.getElementById('chatBox');
-            var html = "";
+            
+            // 👇 여기서 메시지를 링크로 변환! (linkify 함수 사용)
+            var finalMsg = linkify(data.msg);
 
+            var html = "";
             if (data.role === 'system') {
                 html = `<div class='system'><span>${data.msg}</span></div>`;
             } else if (data.role === 'admin') {
-                html = `<div style="text-align: right;"><div class='msg-box admin'><span class='nickname'>${data.name}</span><span class='message'>${data.msg}</span></div></div>`;
+                // 변환된 finalMsg를 넣음
+                html = `<div style="text-align: right;"><div class='msg-box admin'><span class='nickname'>${data.name}</span><span class='message'>${finalMsg}</span></div></div>`;
             } else {
-                html = `<div class='msg-box normal'><span class='nickname'>${data.name}:</span><span class='message'>${data.msg}</span></div>`;
+                // 변환된 finalMsg를 넣음
+                html = `<div class='msg-box normal'><span class='nickname'>${data.name}:</span><span class='message'>${finalMsg}</span></div>`;
             }
             chatBox.innerHTML += html;
             chatBox.scrollTop = chatBox.scrollHeight;
@@ -130,15 +138,10 @@
 
         socket.on('disconnect', function() {
             var chatBox = document.getElementById('chatBox');
-            chatBox.innerHTML += "<div class='system' style='color:red; font-weight:bold;'>🚫 연결이 끊어졌습니다. (새로고침 하세요)</div>";
+            chatBox.innerHTML += "<div class='system' style='color:red; font-weight:bold;'>🚫 연결이 끊어졌습니다.</div>";
             document.getElementById('chatInput').disabled = true;
             document.querySelector('button').disabled = true;
         });
     </script>
 </body>
 </html>
-
-
-
-
-
