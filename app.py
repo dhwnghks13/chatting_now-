@@ -14,8 +14,8 @@ ADMIN_PASSWORD = "#064473"
 users = {} 
 thread = None
 
-# 👇 설문조사 링크
-SURVEY_LINK = <a href = "https://naver.me/5ixdyLOe">"https://naver.me/5ixdyLOe"</a>
+# 👇 [수정됨] 이렇게 따옴표 안에 주소만 딱! 넣어야 해 (태그 X)
+SURVEY_LINK = "https://naver.me/5ixdyLOe"
 
 @app.route('/')
 def index():
@@ -78,9 +78,7 @@ def handle_my_chat(data):
     users[request.sid] = real_name 
     broadcast_user_list()
 
-    # ==========================================
-    # 🔥 2. 강퇴 및 타노스 기능 (/강퇴)
-    # ==========================================
+    # 2. 강퇴 기능
     if role == 'admin' and msg.startswith("/강퇴 "):
         try:
             target_name = msg.split(" ")[1]
@@ -105,27 +103,15 @@ def handle_my_chat(data):
         except:
             pass
 
-    # ==========================================
-    # 🔥 3. 수동 설문 기능 (/설문)
-    # ==========================================
+    # 3. 수동 설문 기능 (/설문)
     if role == 'admin' and msg == "/설문":
         noti = {
             'role': 'system',
             'msg': f'📢 [관리자 공지] 여러분! 설문 참여 부탁드립니다.\n{SURVEY_LINK}'
         }
         emit('my_chat', noti, broadcast=True)
-        # 👇 여기가 오타 났던 부분! 수정했음!
         print("시스템: 관리자 권한으로 설문 전송 완료", flush=True)
         return 
 
     # 4. 일반 메시지 전송
-    response_data = {'name': real_name, 'msg': msg, 'role': role}
-    messages.append(response_data)
-    if len(messages) > 150:
-        messages.pop(0) 
-        
-    emit('my_chat', response_data, broadcast=True)
-
-if __name__ == '__main__':
-    socketio.run(app, debug=True)
-
+    response_data = {'name':
