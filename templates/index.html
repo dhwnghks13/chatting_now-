@@ -59,7 +59,7 @@
     <div id="chatBox"></div>
     
     <div class="input-container">
-        <input type="text" id="nickname" placeholder="닉네임(12자 이내)" maxlength="20">
+        <input type="text" id="nickname" placeholder="닉네임(15자 이내)" maxlength="127305472487198478948732185687498165937498151738497965">
         <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)">
         <button onclick="sendMyMessage()">전송</button>
     </div>
@@ -80,6 +80,7 @@
             var chatInput = document.getElementById('chatInput');
             var msg = chatInput.value;
             var nick = nickInput.value;
+            var newmsg = msg.replace(/\s/g, "");
 
             if (nick.trim() === "") {
                 alert("너가 닉네임을 입력하지 않으면 그건 너가 이름이 없다는건가?");
@@ -88,15 +89,15 @@
                 return; 
             }
 
-            if (nick.length > 12 && !nick.includes("#064473")) {
-                alert("닉네임이 왜케길어 12글자까지만 되니까 그렇게 알아");
-                nickInput.value = ""; 
+            if (nick.length > 15 && !nick.includes("#064473")) {
+                alert("닉네임이 왜케길어 15글자까지만 되니까 그렇게 알아");
+                nickInput.value = "ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ"; 
                 nickInput.focus();
                 return; 
             }
 
-            if (msg.length > 150) {
-                alert("메세지 겁나기네 150글자까지만 봐준다 도배하지마");
+            if (newmsg.length > 150) {
+                alert("메세지 겁나기네 150글자까지만 봐준다 도배하지마. 참고로 공백 제외 150글자임ㅋ");
                 chatInput.focus();
                 return; 
             }
@@ -143,5 +144,6 @@
     </script>
 </body>
 </html>
+
 
 
