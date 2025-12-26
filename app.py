@@ -10,14 +10,32 @@ app.config['SECRET_KEY'] = 'secret'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 messages = []
-
-# 👇 [수정 완료] 이제 진짜 비밀번호는 '#064473'
 ADMIN_PASSWORD = "#064473" 
 users = {} 
+
+# 👇 [추가 1] 백그라운드 작업을 위한 변수 (알바생 명부)
+thread = None
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+# 👇 [추가 2] 3분마다 설문 링크를 쏘는 알바생의 업무 내용
+def send_survey():
+    while True:
+        # 180초(3분) 동안 대기 (서버 안 멈춤!)
+        socketio.sleep(180) 
+        
+        # 설문조사 링크 (여기에 네 링크를 넣어!)
+        survey_link = "https://forms.google.com/your-survey-url"
+        
+        # 시스템 메시지로 전송
+        noti = {
+            'role': 'system', 
+            'msg': f'📋 잠깐! 더 좋은 채팅방을 위해 설문에 참여해주세요.\n{survey_link}'
+        }
+        socketio.emit('my_chat', noti)
+        print("시스템: 설문 링크 전송 완료", flush=True)
 
 def broadcast_user_list():
     user_list = list(users.values())
@@ -26,10 +44,19 @@ def broadcast_user_list():
 
 @socketio.on('connect')
 def handle_connect():
+    global thread # 전역 변수 사용 선언
+    
     users[request.sid] = "익명"
+    
+    # 👇 [추가 3] 알바생이 아직 없으면, 지금 고용해서 일을 시작시킴!
+    if thread is None:
+        thread = socketio.start_background_task(target=send_survey)
+
     broadcast_user_list()
+    
     for data in messages:
         emit('my_chat', data)
+        
     emit('my_chat', {'role': 'system', 'msg': '👋 새로운 분이 입장하셨습니다!'}, broadcast=True)
 
 @socketio.on('disconnect')
@@ -47,14 +74,11 @@ def handle_my_chat(data):
     role = 'normal'
     real_name = original_name
 
-    # ==========================================
-    # 👑 1. 관리자 권한 심사 (비밀번호 #064473)
-    # ==========================================
+    # 1. 관리자 권한
     if ADMIN_PASSWORD in original_name:
         if "오주환" in original_name:
-            role = 'admin'     # 합격!
-            real_name = "오주환" # 화면에는 비번 떼고 보여줌
-            
+            role = 'admin'
+            real_name = "오주환"
     elif original_name.strip() == "오주환":
         role = 'normal'
         real_name = "사칭범 오주환" 
@@ -64,32 +88,24 @@ def handle_my_chat(data):
     users[request.sid] = real_name 
     broadcast_user_list()
 
-    # ==========================================
-    # 💥 2. 타노스 & 강퇴 기능 (/강퇴 all)
-    # ==========================================
+    # 2. 강퇴 기능
     if role == 'admin' and msg.startswith("/강퇴 "):
         try:
             target_name = msg.split(" ")[1]
-            
-            # [타노스 모드] 방 폭파
             if target_name == "all":
                 all_sids = list(users.keys())
                 for sid in all_sids:
                     if sid != request.sid: 
                         disconnect(sid)
-                
-                noti = {'role': 'system', 'msg': '☢️ 관리자가 모든 사용자를 강퇴시켰습니다! (방 폭파)'}
+                noti = {'role': 'system', 'msg': '☢️ 관리자가 모든 사용자를 강퇴시켰습니다!'}
                 emit('my_chat', noti, broadcast=True)
                 return 
-
-            # [일반 강퇴] 한 명 저격
             else:
                 target_sid = None
                 for sid, nickname in users.items():
                     if nickname == target_name:
                         target_sid = sid
                         break
-                
                 if target_sid:
                     disconnect(target_sid)
                     noti = {'role': 'system', 'msg': f'🚫 관리자가 [{target_name}]님을 강퇴시켰습니다.'}
