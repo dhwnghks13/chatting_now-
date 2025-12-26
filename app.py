@@ -10,24 +10,23 @@ app.config['SECRET_KEY'] = 'secret'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 messages = []
-ADMIN_PASSWORD = "#064473" # 🔑 관리자 비밀번호
+ADMIN_PASSWORD = "#1234" # 🔑 관리자 비밀번호
 users = {} # {소켓ID : 닉네임} 저장소
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# 👇 [함수] 접속자 명단 갱신해서 방송하기
+# 접속자 명단 방송 함수
 def broadcast_user_list():
-    user_list = list(users.values()) # 닉네임들만 뽑기
+    user_list = list(users.values())
     count = len(users)
-    # 'update_users' 라는 채널로 명단과 인원수 쏨
     emit('update_users', {'count': count, 'users': user_list}, broadcast=True)
 
 @socketio.on('connect')
 def handle_connect():
-    users[request.sid] = "익명" # 일단 들어오면 익명 등록
-    broadcast_user_list() # 인원수 갱신 방송
+    users[request.sid] = "익명"
+    broadcast_user_list()
     
     for data in messages:
         emit('my_chat', data)
@@ -37,8 +36,8 @@ def handle_connect():
 @socketio.on('disconnect')
 def handle_disconnect():
     if request.sid in users:
-        del users[request.sid] # 명부에서 삭제
-    broadcast_user_list() # 나갔으니까 인원수 갱신 방송
+        del users[request.sid]
+    broadcast_user_list()
     print("누군가 퇴장했습니다.", flush=True)
 
 @socketio.on('my_chat')
@@ -49,7 +48,7 @@ def handle_my_chat(data):
     role = 'normal'
     real_name = original_name
 
-    # 1. 관리자 인증 (#1234)
+    # 1. 관리자 인증
     if ADMIN_PASSWORD in original_name:
         if "오주환" in original_name:
             role = 'admin'
@@ -58,28 +57,49 @@ def handle_my_chat(data):
         role = 'normal'
         real_name = "사칭범 오주환"
 
-    # 2. 닉네임 업데이트 및 명단 갱신
-    # (채팅을 쳐야 비로소 닉네임이 확정되므로 이때 명단 다시 뿌림)
+    # 2. 명단 업데이트
     users[request.sid] = real_name 
     broadcast_user_list()
 
-    # 3. 강퇴 명령어 (/강퇴 닉네임)
+    # ======================================================
+    # 🔥 3. 강퇴 기능 (개별 강퇴 + 전체 강퇴 추가됨!)
+    # ======================================================
     if role == 'admin' and msg.startswith("/강퇴 "):
         try:
-            target_name = msg.split(" ")[1]
-            target_sid = None
-            for sid, nickname in users.items():
-                if nickname == target_name:
-                    target_sid = sid
-                    break
-            if target_sid:
-                disconnect(target_sid) # 연결 끊기 ✂️
-                noti = {'role': 'system', 'msg': f'🚫 관리자가 [{target_name}]님을 강퇴시켰습니다.'}
+            target_name = msg.split(" ")[1] # "/강퇴" 뒤에 쓴 단어 가져오기
+            
+            # 🛑 [타노스 모드] /강퇴 all 입력 시
+            if target_name == "all":
+                # 현재 접속한 모든 소켓 ID를 가져옴
+                all_sids = list(users.keys())
+                
+                for sid in all_sids:
+                    # 나(관리자)는 강퇴하면 안 되니까 제외!
+                    if sid != request.sid:
+                        disconnect(sid) # 너 나가 ✂️
+                
+                # 처형 완료 메시지
+                noti = {'role': 'system', 'msg': '☢️ 관리자가 모든 사용자를 강퇴시켰습니다! (방 폭파)'}
                 emit('my_chat', noti, broadcast=True)
-                return 
-        except:
-            pass
+                return # 여기서 끝냄
 
+            # 🔫 [일반 모드] /강퇴 닉네임 입력 시
+            else:
+                target_sid = None
+                for sid, nickname in users.items():
+                    if nickname == target_name:
+                        target_sid = sid
+                        break
+                
+                if target_sid:
+                    disconnect(target_sid)
+                    noti = {'role': 'system', 'msg': f'🚫 관리자가 [{target_name}]님을 강퇴시켰습니다.'}
+                    emit('my_chat', noti, broadcast=True)
+                    return 
+        except:
+            pass # 명령어 실수하면 무시
+
+    # 4. 일반 메시지 전송
     response_data = {'name': real_name, 'msg': msg, 'role': role}
     messages.append(response_data)
     if len(messages) > 150:
@@ -89,4 +109,3 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
-
