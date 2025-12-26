@@ -84,16 +84,17 @@
                 nickInput.focus();
                 return; // 여기서 컷!
             }
-
-            if(msg.trim() !== "") {
-                socket.emit('my_chat', { name: nick, msg: msg });
-                chatInput.value = "";
-            }
             if (msg.length > 150) {
                 alert("내용은 150글자까지만 된다^^ 도배 ㄴㄴ")
                 chatInput.value = "";
                 return;
             }
+            
+            if(msg.trim() !== "") {
+                socket.emit('my_chat', { name: nick, msg: msg });
+                chatInput.value = "";
+            }
+            
         }
 
         function handleEnter(e) { if (e.key === "Enter") sendMyMessage(); }
@@ -128,6 +129,7 @@
     </script>
 </body>
 </html>
+
 
 
 
