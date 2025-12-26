@@ -14,7 +14,7 @@ ADMIN_PASSWORD = "#064473"
 users = {} 
 thread = None
 
-# 👇 [수정됨] 이렇게 따옴표 안에 주소만 딱! 넣어야 해 (태그 X)
+# 👇 설문조사 링크
 SURVEY_LINK = "https://naver.me/5ixdyLOe"
 
 @app.route('/')
@@ -114,4 +114,5 @@ def handle_my_chat(data):
         return 
 
     # 4. 일반 메시지 전송
-    response_data = {'name':
+    response_data = {'name': real_name, 'msg': msg, 'role': role}
+    messages.append(response
