@@ -113,7 +113,20 @@ def handle_my_chat(data):
         print("시스템: 관리자 권한으로 설문 전송 완료", flush=True)
         return 
 
-    # 4. 일반 메시지 전송 (👇 여기가 에러났던 부분!)
+    # 4. 수동 공지 기능 (/공지)
+    if role == 'admin' and msg.startswith("/공지 "):
+        try:
+            content = msg.split(" ", 1)[1]
+            noti = {
+                'role': 'system',
+                'msg': f"📢 [공지사항] {content}" 
+            }
+            emit('my_chat', noti, broadcast=True)
+        except:
+            pass
+
+    
+    # 5. 일반 메시지 전송 (👇 여기가 에러났던 부분!)
     response_data = {'name': real_name, 'msg': msg, 'role': role}
     messages.append(response_data) # 👈 여기가 잘렸었어! 다시 확인!
     
@@ -124,3 +137,4 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
