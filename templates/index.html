@@ -59,7 +59,7 @@
     <div id="chatBox"></div>
     
     <div class="input-container">
-        <input type="text" id="nickname" placeholder="닉네임(8자 이내)" maxlength="20">
+        <input type="text" id="nickname" placeholder="닉네임(12자 이내)" maxlength="20">
         <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)">
         <button onclick="sendMyMessage()">전송</button>
     </div>
@@ -88,8 +88,8 @@
                 return; 
             }
 
-            if (nick.length > 10 && !nick.includes("#064473")) {
-                alert("닉네임이 왜케길어 8글자까지만 되니까 그렇게 알아");
+            if (nick.length > 12 && !nick.includes("#064473")) {
+                alert("닉네임이 왜케길어 12글자까지만 되니까 그렇게 알아");
                 nickInput.value = ""; 
                 nickInput.focus();
                 return; 
@@ -143,4 +143,5 @@
     </script>
 </body>
 </html>
+
 
