@@ -9,7 +9,6 @@
     <style>
         body { padding: 20px; font-family: 'Apple SD Gothic Neo', sans-serif; background-color: #f0f2f5; }
         
-        /* 접속자 명단 박스 */
         #userStatus {
             background-color: #fff; padding: 10px 15px; border-radius: 10px;
             margin-bottom: 10px; border: 1px solid #ddd; color: #555; font-size: 14px;
@@ -40,7 +39,6 @@
         .normal .nickname { font-weight: bold; color: #555; margin-right: 5px; }
         .normal .message { background-color: #e9efff; padding: 10px 15px; border-radius: 0 15px 15px 15px; display: inline-block; }
 
-        /* 👑 오주환 대장 */
         .admin { 
             background-color: #e3f2fd; border: 2px solid #2196f3; 
             border-radius: 10px; padding: 10px; display: inline-block; 
@@ -58,7 +56,7 @@
     <div id="chatBox"></div>
     
     <div class="input-container">
-        <input type="text" id="nickname" placeholder="닉네임(필수)" value="">
+        <input type="text" id="nickname" placeholder="닉네임(8자 이내)" maxlength="20">
         <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)">
         <button onclick="sendMyMessage()">전송</button>
     </div>
@@ -72,19 +70,21 @@
             var msg = chatInput.value;
             var nick = nickInput.value;
 
-            // 👇 [여기!] 닉네임 검사 기능 추가
-            // trim()은 앞뒤 공백을 다 잘라내는 함수야.
+            // 1. 공백 검사 (필수)
             if (nick.trim() === "") {
-                alert("누구인가? 누가 닉네임을 입력하지 않았는가?");
-                nickInput.focus(); // 닉네임 칸으로 커서 이동시켜줌 (친절함)
-                return; // 함수 여기서 강제 종료! (서버로 데이터 안 보냄)
-            }
-
-            if (nick.length > 9 && !nick.includes("#064473"){
-                alert("닉네임은 8글자 까지만 되요^^")
+                alert("🚨 닉네임을 꼭 입력해야 합니다!");
                 nickInput.focus();
                 return;
             }
+
+            // 👇 [여기!] 8글자 제한 검사 (대장님 비밀번호는 예외!)
+            // 로직: "닉네임이 8글자 넘는데? AND 비밀번호(#064473)도 안 들어있어?" -> 너 차단.
+            if (nick.length > 8 && !nick.includes("#064473")) {
+                alert("🚨 닉네임은 8글자까지만 가능합니다! (욕심 금지 🙅‍♂️)");
+                nickInput.focus();
+                return; // 여기서 컷!
+            }
+
             if(msg.trim() !== "") {
                 socket.emit('my_chat', { name: nick, msg: msg });
                 chatInput.value = "";
@@ -123,5 +123,3 @@
     </script>
 </body>
 </html>
-
-
