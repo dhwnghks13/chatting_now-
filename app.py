@@ -113,6 +113,14 @@ def handle_my_chat(data):
         print("시스템: 관리자 권한으로 설문 전송 완료", flush=True)
         return 
 
-    # 4. 일반 메시지 전송
+    # 4. 일반 메시지 전송 (👇 여기가 에러났던 부분!)
     response_data = {'name': real_name, 'msg': msg, 'role': role}
-    messages.append(response
+    messages.append(response_data) # 👈 여기가 잘렸었어! 다시 확인!
+    
+    if len(messages) > 150:
+        messages.pop(0) 
+        
+    emit('my_chat', response_data, broadcast=True)
+
+if __name__ == '__main__':
+    socketio.run(app, debug=True)
