@@ -15,7 +15,7 @@ users = {}
 thread = None
 
 # 👇 설문조사 링크
-SURVEY_LINK = "https://naver.me/5ixdyLOe"
+SURVEY_LINK = <a href = "https://naver.me/5ixdyLOe">"https://naver.me/5ixdyLOe"</a>
 
 @app.route('/')
 def index():
@@ -128,3 +128,4 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
