@@ -34,7 +34,7 @@
 
         .msg-box { margin-bottom: 12px; }
         .system { text-align: center; margin: 20px 0; }
-        .system span { background-color: #eee; color: #666; padding: 5px 15px; border-radius: 20px; font-size: 12px; }
+        .system span { background-color: #eee; color: #666; padding: 5px 15px; border-radius: 20px; font-size: 12px; white-space: pre-wrap; }
 
         .normal .nickname { font-weight: bold; color: #555; margin-right: 5px; }
         .normal .message { background-color: #e9efff; padding: 10px 15px; border-radius: 0 15px 15px 15px; display: inline-block; }
@@ -47,9 +47,9 @@
         .admin .nickname::after { content: " ✔️(Official)"; color: #2196f3; font-size: 14px; }
         .admin .message { color: #333; font-weight: bold; font-size: 18px; }
 
-        /* 👇 링크 스타일 추가 (파란색 + 밑줄) */
-        .message a { color: #007bff; text-decoration: underline; }
-        .message a:hover { color: #0056b3; }
+        /* 링크 스타일 (파란색 + 밑줄) */
+        a { color: #007bff; text-decoration: underline; cursor: pointer; }
+        a:hover { color: #0056b3; }
     </style>
 </head>
 <body>
@@ -67,11 +67,10 @@
     <script>
         var socket = io({transports: ['websocket', 'polling']});
 
-        // 👇 [핵심 함수] 텍스트 안에 있는 URL을 찾아서 <a> 태그로 바꿔주는 마법사
+        // 👇 텍스트를 링크로 바꿔주는 마법 함수
         function linkify(text) {
             var urlRegex = /(https?:\/\/[^\s]+)/g;
             return text.replace(urlRegex, function(url) {
-                // target="_blank"는 새 창에서 열리게 하는 옵션
                 return '<a href="' + url + '" target="_blank">' + url + '</a>';
             });
         }
@@ -113,17 +112,16 @@
         socket.on('my_chat', function(data) {
             var chatBox = document.getElementById('chatBox');
             
-            // 👇 여기서 메시지를 링크로 변환! (linkify 함수 사용)
+            // 👇 [중요] 모든 메시지(시스템, 관리자, 일반)에 링크 변환 적용!
             var finalMsg = linkify(data.msg);
 
             var html = "";
             if (data.role === 'system') {
-                html = `<div class='system'><span>${data.msg}</span></div>`;
+                // 👇 여기도 finalMsg를 넣어야 링크가 클릭됨!
+                html = `<div class='system'><span>${finalMsg}</span></div>`;
             } else if (data.role === 'admin') {
-                // 변환된 finalMsg를 넣음
                 html = `<div style="text-align: right;"><div class='msg-box admin'><span class='nickname'>${data.name}</span><span class='message'>${finalMsg}</span></div></div>`;
             } else {
-                // 변환된 finalMsg를 넣음
                 html = `<div class='msg-box normal'><span class='nickname'>${data.name}:</span><span class='message'>${finalMsg}</span></div>`;
             }
             chatBox.innerHTML += html;
