@@ -15,7 +15,7 @@ users = {}
 thread = None
 
 # 👇 설문조사 링크 (여기서 한 번만 고치면 다 적용되게 변수로 뺐어!)
-SURVEY_LINK = "https://forms.google.com/your-survey-url"
+SURVEY_LINK = "https://naver.me/5ixdyLOe"
 
 @app.route('/')
 def index():
@@ -114,6 +114,7 @@ def handle_my_chat(data):
             'role': 'system',
             'msg': f'📢 [관리자 공지] 여러분! 설문 참여 부탁드립니다.\n{SURVEY_LINK}'
         }
+        print("시스템: 관리자 권한으로로 설문 전송 완료", flush=자 권한으
         emit('my_chat', noti, broadcast=True)
         return # 중요: "/설문"이라는 글자는 채팅창에 안 나가게 여기서 멈춤!
 
@@ -127,3 +128,4 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
