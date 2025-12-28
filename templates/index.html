@@ -50,6 +50,12 @@
         /* 링크 스타일 (파란색 + 밑줄) */
         a { color: #007bff; text-decoration: underline; cursor: pointer; }
         a:hover { color: #0056b3; }
+        .message {
+            word-break: break-all; /* 영어, 숫자, 링크가 길어도 강제로 줄바꿈 함 */
+            white-space: pre-wrap; /* 엔터 친 것도 줄바꿈 반영해줌 */
+            display: inline-block; /* 말풍선 디자인 유지 */
+            max-width: 100%; /* 말풍선이 화면 밖으로 안 나가게 막음 */
+        }
     </style>
 </head>
 <body>
@@ -144,6 +150,7 @@
     </script>
 </body>
 </html>
+
 
 
 
