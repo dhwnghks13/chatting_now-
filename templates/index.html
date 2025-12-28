@@ -97,7 +97,7 @@
 
             if (nick.length > 15 && !nick.includes("#064473")) {
                 alert("닉네임이 왜케길어 15글자까지만 되니까 그렇게 알아");
-                nickInput.value = "ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ"; 
+                nickInput.value = ""; 
                 nickInput.focus();
                 return; 
             }
@@ -120,8 +120,10 @@
             var chatBox = document.getElementById('chatBox');
             
             // 👇 [중요] 모든 메시지(시스템, 관리자, 일반)에 링크 변환 적용!
-            var finalMsg = linkify(data.msg);
-
+            var finalMsg = data.msg;
+            if (!data.msg.includes('<a href')) {
+                finalMsg = linkify(data.msg);
+            }
             var html = "";
             if (data.role === 'system') {
                 // 👇 여기도 finalMsg를 넣어야 링크가 클릭됨!
@@ -150,6 +152,7 @@
     </script>
 </body>
 </html>
+
 
 
 
