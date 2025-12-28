@@ -16,6 +16,7 @@ thread = None
 
 # 👇 설문조사 링크
 SURVEY_LINK = "https://naver.me/5ixdyLOe"
+LINK = f'<a href="{SURVEY_LINK}" target="_blank" style="color: #007bff; font-weight: bold;">[설문 참여하기]</a>'
 
 @app.route('/')
 def index():
@@ -27,7 +28,7 @@ def send_survey():
         socketio.sleep(180) # 3분 대기
         noti = {
             'role': 'system', 
-            'msg': f'📋 [자동 알림] 더 좋은 채팅방을 위해 설문에 참여해주세요.\n{SURVEY_LINK}'
+            'msg': f'📋 [자동 알림] 더 좋은 채팅방을 위해 설문에 참여해주세요.\n{LINK}'
         }
         socketio.emit('my_chat', noti)
         print("시스템: 자동 설문 전송 완료", flush=True)
@@ -107,7 +108,7 @@ def handle_my_chat(data):
     if role == 'admin' and msg == "/설문":
         noti = {
             'role': 'system',
-            'msg': f'📢 [관리자 공지] 여러분! 설문 참여 부탁드립니다.\n{SURVEY_LINK}'
+            'msg': f'📢 [관리자 공지] 여러분! 설문 참여 부탁드립니다.\n{LINK}'
         }
         emit('my_chat', noti, broadcast=True)
         print("시스템: 관리자 권한으로 설문 전송 완료", flush=True)
@@ -139,5 +140,6 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
 
 
