@@ -111,7 +111,7 @@ def handle_my_chat(data):
             role = 'admin'
             real_name = "오주환"
         elif "이다운" in original_name:
-            role=admin
+            role='admin'
             real_name = "이다운"
     elif original_name.strip() == "오주환" or original_name.strip() == "이다운":
         role = 'normal'
@@ -186,6 +186,7 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
 
 
 
