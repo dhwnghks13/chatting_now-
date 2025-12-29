@@ -73,7 +73,7 @@
     <div id="chatBox"></div>
     
     <div class="input-container">
-        <input type="text" id="nickname" placeholder="닉네임(3자 이내)" maxlength="20">
+        <input type="text" id="nickname" placeholder="닉네임(15자 이내)" maxlength="1234567890">
         <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)" onkeydown="handleKeyDown(event)">
             
         <button onclick="sendMyMessage()">전송</button>
@@ -148,8 +148,8 @@
 
             // 👇 [수정됨] 비밀번호(#)가 없는 일반 유저만 3글자 제한을 둠!
             // 'admin'이라는 변수는 여기 없어서 쓰면 에러남. 대신 암호 포함 여부로 확인.
-            if (nick.length > 3 && !nick.includes("#064473") && !nick.includes("#3446")) {
-                alert("닉네임 자기 이름으로 해라 아니면 다운이가 찾아갈지도...");
+            if (nick.length > 15 && !nick.includes("#064473") && !nick.includes("#3446")) {
+                alert("닉네임은 15글자까지만하세요......");
                 nickInput.value = ""; 
                 nickInput.focus();
                 return; 
@@ -225,4 +225,5 @@
     </script>
 </body>
 </html>
+
 
