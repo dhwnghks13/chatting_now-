@@ -73,12 +73,28 @@ def handle_connect():
 
 @socketio.on('disconnect')
 def handle_disconnect():
+    # 1. [확인] 나가려는 사람 닉네임 먼저 챙기기 (지우면 못 찾으니까!)
+    nickname = users.get(request.sid, "익명")
+
+    # 2. [삭제] 명부에서 제거
     if request.sid in users:
         del users[request.sid]
-    exit_msg={'role': 'system', 'msg': '누군가 퇴장했습니다.', 'time': get_current_time()}
+
+    # 3. [메시지 생성] "누군가" 대신 닉네임 넣기
+    exit_msg = {
+        'role': 'system', 
+        'msg': f'🚪 [{nickname}]님이 퇴장하셨습니다.', 
+        'time': get_current_time()
+    }
+    
+    # 4. [저장] 퇴장 로그도 저장해야 나중에 온 사람이 "아 걔 나갔구나" 알 수 있음
+    save_msg(exit_msg)
+
+    # 5. [전송]
     emit('my_chat', exit_msg, broadcast=True)
     broadcast_user_list()
-    print("누군가 퇴장했습니다.", flush=True)
+    
+    print(f"[{nickname}]님이 퇴장했습니다.", flush=True)
 
 @socketio.on('my_chat')
 def handle_my_chat(data):
@@ -166,6 +182,7 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
 
 
 
