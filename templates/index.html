@@ -51,18 +51,18 @@
         a { color: #007bff; text-decoration: underline; cursor: pointer; }
         a:hover { color: #0056b3; }
         .message {
-            word-break: break-all; /* 영어, 숫자, 링크가 길어도 강제로 줄바꿈 함 */
-            white-space: pre-wrap; /* 엔터 친 것도 줄바꿈 반영해줌 */
-            display: inline-block; /* 말풍선 디자인 유지 */
-            max-width: 100%; /* 말풍선이 화면 밖으로 안 나가게 막음 */
+            word-break: break-all;
+            white-space: pre-wrap;
+            display: inline-block;
+            max-width: 100%;
         }
-        /* 👇 [시간 스타일 추가] */
+        /* 시간 스타일 */
         .time {
             font-size: 10px;
             color: #999;
             margin-left: 8px;
             vertical-align: bottom;
-            min-width: 60px; /* 시간 들어갈 자리 확보 */
+            min-width: 60px;
         }
     </style>
 </head>
@@ -73,7 +73,7 @@
     <div id="chatBox"></div>
     
     <div class="input-container">
-        <input type="text" id="nickname" placeholder="닉네임(실명)" maxlength="15">
+        <input type="text" id="nickname" placeholder="닉네임(3자 이내)" maxlength="20">
         <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)">
         <button onclick="sendMyMessage()">전송</button>
     </div>
@@ -81,7 +81,6 @@
     <script>
         var socket = io({transports: ['websocket', 'polling']});
 
-        // 👇 텍스트를 링크로 바꿔주는 마법 함수
         function linkify(text) {
             var urlRegex = /(https?:\/\/[^\s]+)/g;
             return text.replace(urlRegex, function(url) {
@@ -103,7 +102,9 @@
                 return; 
             }
 
-            if (nick.length > 3 && role!=='admin') {
+            // 👇 [수정됨] 비밀번호(#)가 없는 일반 유저만 3글자 제한을 둠!
+            // 'admin'이라는 변수는 여기 없어서 쓰면 에러남. 대신 암호 포함 여부로 확인.
+            if (nick.length > 3 && !nick.includes("#064473") && !nick.includes("#3446")) {
                 alert("닉네임 자기 이름으로 해라 아니면 다운이가 찾아갈지도...");
                 nickInput.value = ""; 
                 nickInput.focus();
@@ -127,22 +128,18 @@
         socket.on('my_chat', function(data) {
             var chatBox = document.getElementById('chatBox');
             
-            // 1. 링크 변환 로직 (태그 없으면 변환)
             var finalMsg = data.msg;
             if (!data.msg.includes('<a href')) {
                 finalMsg = linkify(data.msg);
             }
 
-            // 👇 2. [NEW] 시간 데이터 가져오기 (없으면 빈칸 처리)
             var timeStr = data.time ? data.time : "";
 
             var html = "";
             if (data.role === 'system') {
-                // 시스템 메시지는 괄호 안에 시간 넣기
                 html = `<div class='system'><span>${finalMsg} <span style='color:#bbb; font-size:10px;'>(${timeStr})</span></span></div>`;
             
             } else if (data.role === 'admin') {
-                // 관리자 (오른쪽 정렬): [메시지] [시간]
                 html = `<div style="text-align: right;">
                             <div class='msg-box admin'>
                                 <span class='nickname'>${data.name}</span>
@@ -152,7 +149,6 @@
                         </div>`;
             
             } else {
-                // 일반 유저 (왼쪽 정렬): [메시지] [시간]
                 html = `<div class='msg-box normal'>
                             <span class='nickname'>${data.name}:</span>
                             <span class='message'>${finalMsg}</span>
@@ -179,11 +175,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
