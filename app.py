@@ -64,7 +64,7 @@ def handle_connect():
     for data in messages:
         emit('my_chat', data)
 
-    welcome_msg={'role': 'system', 'msg': '👋 새로운 분이 입장하셨습니다!' 'time': get_current_time()}
+    welcome_msg={'role': 'system', 'msg': '👋 새로운 분이 입장하셨습니다!', 'time': get_current_time()}
 
     save_msg(welcome_msg)
     
@@ -75,6 +75,8 @@ def handle_connect():
 def handle_disconnect():
     if request.sid in users:
         del users[request.sid]
+    exit_msg={'role': 'system', 'msg': '누군가 퇴장했습니다.', 'time': get_current_time()}
+    emit('my_chat', exit_msg, broadcast=True)
     broadcast_user_list()
     print("누군가 퇴장했습니다.", flush=True)
 
@@ -155,7 +157,7 @@ def handle_my_chat(data):
 
     
     # 5. 일반 메시지 전송 (👇 여기가 에러났던 부분!)
-    response_data = {'name': real_name, 'msg': msg, 'role': role 'time': get_current_time()}
+    response_data = {'name': real_name, 'msg': msg, 'role': role, 'time': get_current_time()}
     messages.append(response_data) # 👈 여기가 잘렸었어! 다시 확인!
     
     save_msg(response_data)
@@ -164,6 +166,7 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
 
 
 
