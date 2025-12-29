@@ -74,18 +74,62 @@
     
     <div class="input-container">
         <input type="text" id="nickname" placeholder="닉네임(3자 이내)" maxlength="20">
-        <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)">
+        <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)" onkeydown="handleKeyDown(event)">
+            
         <button onclick="sendMyMessage()">전송</button>
+        
     </div>
 
     <script>
         var socket = io({transports: ['websocket', 'polling']});
-
+        
+        var myMsgHistory = [];  // 내가 보낸 말들 저장하는 창고
+        var historyIndex = -1;  // 지금 창고 몇 번째 칸을 보고 있는지 (-1은 '현재 입력중' 상태)
+        var tempMsg = "";
+        
         function linkify(text) {
             var urlRegex = /(https?:\/\/[^\s]+)/g;
             return text.replace(urlRegex, function(url) {
                 return '<a href="' + url + '" target="_blank">' + url + '</a>';
             });
+            
+        }
+        function handleKeyDown(e) {
+            var chatInput = document.getElementById('chatInput');
+
+            // ⬆️ 위쪽 화살표: 옛날 메시지 불러오기
+            if (e.key === "ArrowUp") {
+                e.preventDefault(); // 커서가 맨 앞으로 튀는 거 방지
+                
+                // 아직 기록 탐색을 안 시작했으면? (현재 입력중인거 저장)
+                if (historyIndex === -1) {
+                    tempMsg = chatInput.value;
+                    historyIndex = myMsgHistory.length - 1; // 맨 마지막(최신) 기록부터 시작
+                } else if (historyIndex > 0) {
+                    historyIndex--; // 더 옛날 거로 이동
+                }
+
+                // 기록이 있다면 화면에 표시
+                if (historyIndex >= 0 && myMsgHistory[historyIndex]) {
+                    chatInput.value = myMsgHistory[historyIndex];
+                }
+            }
+            
+            // ⬇️ 아래쪽 화살표: 다시 최근(입력하던 거)으로 돌아오기
+            else if (e.key === "ArrowDown") {
+                e.preventDefault();
+
+                if (historyIndex !== -1) {
+                    if (historyIndex < myMsgHistory.length - 1) {
+                        historyIndex++; // 다시 최신 쪽으로 이동
+                        chatInput.value = myMsgHistory[historyIndex];
+                    } else {
+                        // 맨 끝까지 왔으면 아까 쓰던 걸로 복구!
+                        historyIndex = -1;
+                        chatInput.value = tempMsg;
+                    }
+                }
+            }
         }
 
         function sendMyMessage() {
@@ -119,6 +163,12 @@
 
             if(msg.trim() !== "") {
                 socket.emit('my_chat', { name: nick, msg: msg });
+                
+                // 👇 [NEW] 보낸 메시지 기록하기!
+                myMsgHistory.push(msg); 
+                historyIndex = -1; // 전송했으니 다시 '새 입력' 상태로 리셋
+                tempMsg = "";      // 임시 저장소 비우기
+
                 chatInput.value = ""; 
             }
         }
@@ -175,3 +225,4 @@
     </script>
 </body>
 </html>
+
