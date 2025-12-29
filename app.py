@@ -26,7 +26,7 @@ def index():
 
 def save_msg(data):
     messages.append(data)
-    if len(messages) > 150:
+    if len(messages) > 200:
         messages.pop(0)
 
 def get_current_time():
@@ -186,6 +186,7 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
 
 
 
