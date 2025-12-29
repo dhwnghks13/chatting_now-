@@ -164,7 +164,7 @@ def handle_my_chat(data):
             noti = {
                 'role': 'system',
                 'msg': f"📢 [공지사항] {content}"
-                'time': get_current_time()
+                'time': get_current_time(),
             }
             save_msg(noti)
             emit('my_chat', noti, broadcast=True)
@@ -184,6 +184,7 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
 
 
 
