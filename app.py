@@ -73,7 +73,7 @@ def handle_my_chat(data):
             real_name = "오주환"
     elif original_name.strip() == "오주환":
         role = 'normal'
-        real_name = "남을 따라하려는 자신을 잊은 사람람" 
+        real_name = "남을 따라하려는 자신을 잊은 사람" 
 
     print(f"[로그] 입력닉네임: {original_name} -> 권한: {role}", flush=True)
     users[request.sid] = real_name 
@@ -140,6 +140,7 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
 
 
 
