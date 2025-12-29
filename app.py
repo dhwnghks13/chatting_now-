@@ -18,6 +18,7 @@ thread = None
 
 # 👇 설문조사 링크
 SURVEY_LINK = "https://naver.me/5ixdyLOe"
+# 👇 [수정] 백슬래시(\) 제거함
 LINK = f'<a href="{SURVEY_LINK}" target="_blank" style="color: #007bff; font-weight: bold;">[설문 참여하기]</a>'
 
 @app.route('/')
@@ -26,15 +27,12 @@ def index():
 
 def save_msg(data):
     messages.append(data)
-    if len(messages) > 200:
+    if len(messages) > 150:
         messages.pop(0)
 
 def get_current_time():
-    # 서버 시간(UTC)에 9시간을 더해서 한국 시간을 만듦
     now = datetime.utcnow() + timedelta(hours=9)
-    # "오후 3:45" 같은 형식으로 바꿈
-    time_str = now.strftime('%p %I:%M').replace('AM', '오전').replace('PM', '오후')
-    return time_str
+    return now.strftime('%p %I:%M').replace('AM', '오전').replace('PM', '오후')
 
 # [자동] 3분마다 설문 쏘는 알바생
 def send_survey():
@@ -42,7 +40,7 @@ def send_survey():
         socketio.sleep(180) # 3분 대기
         noti = {
             'role': 'system', 
-            'msg': f'📋 [자동 알림] 더 좋은 채팅방을 위해 설문에 참여해주세요.\ {LINK}'
+            'msg': f'📋 [자동 알림] 더 좋은 채팅방을 위해 설문에 참여해주세요. {LINK}'
         }
         save_msg(noti)
         socketio.emit('my_chat', noti)
@@ -68,30 +66,24 @@ def handle_connect():
     welcome_msg={'role': 'system', 'msg': '👋 새로운 분이 입장하셨습니다!', 'time': get_current_time()}
 
     save_msg(welcome_msg)
-    
     emit('my_chat', welcome_msg, broadcast=True)
     
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    # 1. [확인] 나가려는 사람 닉네임 먼저 챙기기 (지우면 못 찾으니까!)
     nickname = users.get(request.sid, "익명")
 
-    # 2. [삭제] 명부에서 제거
     if request.sid in users:
         del users[request.sid]
 
-    # 3. [메시지 생성] "누군가" 대신 닉네임 넣기
     exit_msg = {
         'role': 'system', 
         'msg': f'🚪 [{nickname}]님이 퇴장하셨습니다.',
         'time': get_current_time()
     }
     
-    # 4. [저장] 퇴장 로그도 저장해야 나중에 온 사람이 "아 걔 나갔구나" 알 수 있음
     save_msg(exit_msg)
 
-    # 5. [전송]
     emit('my_chat', exit_msg, broadcast=True)
     broadcast_user_list()
     
@@ -111,8 +103,9 @@ def handle_my_chat(data):
             role = 'admin'
             real_name = "오주환"
         elif "이다운" in original_name:
-            role='admin'
+            role = 'admin'  # 👈 [수정] 따옴표 붙여야 함! (role=admin 은 에러남)
             real_name = "이다운"
+            
     elif original_name.strip() == "오주환" or original_name.strip() == "이다운":
         role = 'normal'
         real_name = "남을 따라하려는 자신을 잊은 사람" 
@@ -152,7 +145,7 @@ def handle_my_chat(data):
     if role == 'admin' and msg == "/설문":
         noti = {
             'role': 'system',
-            'msg': f'📢 [관리자 공지] 여러분! 설문 참여 부탁드립니다.\ {LINK}'
+            'msg': f'📢 [관리자 공지] 여러분! 설문 참여 부탁드립니다. {LINK}'
         }
         save_msg(noti)
         emit('my_chat', noti, broadcast=True)
@@ -175,28 +168,13 @@ def handle_my_chat(data):
         except:
             pass
 
-    
-    # 5. 일반 메시지 전송 (👇 여기가 에러났던 부분!)
+    # 5. 일반 메시지 전송
     response_data = {'name': real_name, 'msg': msg, 'role': role, 'time': get_current_time()}
-    messages.append(response_data) # 👈 여기가 잘렸었어! 다시 확인!
     
+    # ❌ [수정] messages.append(response_data) <- 이거 지웠음! (save_msg 안에서 이미 하고 있음)
     save_msg(response_data)
         
     emit('my_chat', response_data, broadcast=True)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
