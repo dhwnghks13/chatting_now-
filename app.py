@@ -1,5 +1,6 @@
 import eventlet
 from flask import request
+from datetime import datetime, timedelta
 eventlet.monkey_patch()
 
 from flask import Flask, render_template
@@ -22,6 +23,18 @@ LINK = f'<a href="{SURVEY_LINK}" target="_blank" style="color: #007bff; font-wei
 def index():
     return render_template('index.html')
 
+def save_msg(data):
+    messages.append(data)
+    if len(messages) > 150:
+        messages.pop(0)
+
+def get_current_time():
+    # 서버 시간(UTC)에 9시간을 더해서 한국 시간을 만듦
+    now = datetime.utcnow() + timedelta(hours=9)
+    # "오후 3:45" 같은 형식으로 바꿈
+    time_str = now.strftime('%p %I:%M').replace('AM', '오전').replace('PM', '오후')
+    return time_str
+
 # [자동] 3분마다 설문 쏘는 알바생
 def send_survey():
     while True:
@@ -30,6 +43,7 @@ def send_survey():
             'role': 'system', 
             'msg': f'📋 [자동 알림] 더 좋은 채팅방을 위해 설문에 참여해주세요.\ {LINK}'
         }
+        save_msg(noti)
         socketio.emit('my_chat', noti)
         print("시스템: 자동 설문 전송 완료", flush=True)
 
@@ -49,7 +63,13 @@ def handle_connect():
     broadcast_user_list()
     for data in messages:
         emit('my_chat', data)
-    emit('my_chat', {'role': 'system', 'msg': '👋 새로운 분이 입장하셨습니다!'}, broadcast=True)
+
+    welcome_msg={'role': 'system', 'msg': '👋 새로운 분이 입장하셨습니다!' 'time': get_current_time()}
+
+    save_msg(welcome_msg)
+    
+    emit('my_chat', welcome_msg, broadcast=True)
+    
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -88,6 +108,7 @@ def handle_my_chat(data):
                 for sid in all_sids:
                     if sid != request.sid: disconnect(sid)
                 noti = {'role': 'system', 'msg': '☢️ 관리자가 모든 사용자를 강퇴시켰습니다!'}
+                save_msg(noti)
                 emit('my_chat', noti, broadcast=True)
                 return 
             else:
@@ -99,6 +120,7 @@ def handle_my_chat(data):
                 if target_sid:
                     disconnect(target_sid)
                     noti = {'role': 'system', 'msg': f'🚫 관리자가 [{target_name}]님을 강퇴시켰습니다.'}
+                    save_msg(noti)
                     emit('my_chat', noti, broadcast=True)
                     return 
         except:
@@ -110,6 +132,7 @@ def handle_my_chat(data):
             'role': 'system',
             'msg': f'📢 [관리자 공지] 여러분! 설문 참여 부탁드립니다.\ {LINK}'
         }
+        save_msg(noti)
         emit('my_chat', noti, broadcast=True)
         print("시스템: 관리자 권한으로 설문 전송 완료", flush=True)
         return 
@@ -120,8 +143,10 @@ def handle_my_chat(data):
             content = msg.split(" ", 1)[1]
             noti = {
                 'role': 'system',
-                'msg': f"📢 [공지사항] {content}" 
+                'msg': f"📢 [공지사항] {content}"
+                'time': get_current_time()
             }
+            save_msg(noti)
             emit('my_chat', noti, broadcast=True)
             print("시스템: 관리자 권한으로 공지 전송 완료", flush=True)
             return
@@ -130,11 +155,10 @@ def handle_my_chat(data):
 
     
     # 5. 일반 메시지 전송 (👇 여기가 에러났던 부분!)
-    response_data = {'name': real_name, 'msg': msg, 'role': role}
+    response_data = {'name': real_name, 'msg': msg, 'role': role 'time': get_current_time()}
     messages.append(response_data) # 👈 여기가 잘렸었어! 다시 확인!
     
-    if len(messages) > 150:
-        messages.pop(0) 
+    save_msg(response_data)
         
     emit('my_chat', response_data, broadcast=True)
 
