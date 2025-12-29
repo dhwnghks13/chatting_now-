@@ -73,7 +73,7 @@
     <div id="chatBox"></div>
     
     <div class="input-container">
-        <input type="text" id="nickname" placeholder="닉네임(15자 이내)" maxlength="127305472487198478948732185687498165937498151738497965">
+        <input type="text" id="nickname" placeholder="닉네임(실명)" maxlength="15">
         <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)">
         <button onclick="sendMyMessage()">전송</button>
     </div>
@@ -103,8 +103,8 @@
                 return; 
             }
 
-            if (nick.length > 15 && !nick.includes("#064473")) {
-                alert("닉네임이 왜케길어 15글자까지만 되니까 그렇게 알아");
+            if (nick.length > 3 && role!==admin) {
+                alert("닉네임 자기 이름으로 해라 아니면 다운이가 찾아갈지도...");
                 nickInput.value = ""; 
                 nickInput.focus();
                 return; 
@@ -179,6 +179,7 @@
     </script>
 </body>
 </html>
+
 
 
 
