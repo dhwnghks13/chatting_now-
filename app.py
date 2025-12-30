@@ -12,7 +12,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 messages = []
 ADMIN_PASSWORD = "#064473" 
-ADMIN_PASSWORD2 = "#3446"
+ADMIN_PASSWORD2 = "#14141815"
 users = {} 
 thread = None
 
@@ -169,7 +169,13 @@ def handle_my_chat(data):
             pass
 
     # 5. 일반 메시지 전송
-    response_data = {'name': real_name, 'msg': msg, 'role': role, 'time': get_current_time()}
+    mention_target = None
+    if msg.startswith("@"):
+        # 2. 첫 번째 공백까지만 잘라서 닉네임 추출 ("@오주환 안녕" -> "@오주환")
+        first_word = msg.split(" ")[0]
+        if len(first_word) > 1:
+            mention_target = first_word[1:]
+    response_data = {'name': real_name, 'msg': msg, 'role': role, 'time': get_current_time(), 'mention': mention_target}
     
     # ❌ [수정] messages.append(response_data) <- 이거 지웠음! (save_msg 안에서 이미 하고 있음)
     save_msg(response_data)
@@ -178,3 +184,4 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
