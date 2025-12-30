@@ -21,7 +21,7 @@
             border-radius: 15px; overflow-y: scroll; padding: 20px; 
             margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
             display: flex;
-            flex-direction: column; /* 메시지들이 위에서 아래로 쌓이게 */
+            flex-direction: column; /* 메시지 세로 정렬 */
             gap: 15px; /* 메시지 사이 간격 */
         }
 
@@ -35,275 +35,34 @@
         button:hover { background: #1976d2; }
         button:disabled { background: #ccc; cursor: not-allowed; }
 
-        /* 👇 [핵심] 메시지 박스 전체 틀 */
+        /* 👇 메시지 박스 전체 틀 */
         .msg-box {
             display: flex;
-            flex-direction: column; /* 닉네임 위, 말풍선 아래 */
-            max-width: 80%; /* 화면의 80%까지만 차지 */
+            flex-direction: column; 
+            max-width: 80%; 
         }
 
-        /* 일반 유저 (왼쪽 정렬) */
+        /* 일반 유저 (왼쪽) */
         .msg-box.normal {
-            align-self: flex-start; /* 왼쪽 벽에 붙기 */
+            align-self: flex-start;
         }
         .msg-box.normal .nickname {
-            margin-left: 5px;
-            margin-bottom: 5px;
-            font-size: 13px;
-            color: #666;
-            font-weight: bold;
+            margin-left: 5px; margin-bottom: 5px;
+            font-size: 13px; color: #666; font-weight: bold;
         }
         .msg-box.normal .content-wrapper {
-            display: flex;
-            align-items: flex-end; /* 말풍선 밑부분에 시간 맞추기 */
+            display: flex; align-items: flex-end;
         }
         .msg-box.normal .message {
             background-color: #e9efff;
-            border-radius: 0 15px 15px 15px; /* 왼쪽 위만 뾰족하게 */
+            border-radius: 0 15px 15px 15px;
         }
 
-        /* 관리자/본인 (오른쪽 정렬) */
+        /* 관리자 (오른쪽) */
         .msg-box.admin {
-            align-self: flex-end; /* 오른쪽 벽에 붙기 */
-            align-items: flex-end; /* 내부 요소들도 오른쪽 정렬 */
+            align-self: flex-end;
+            align-items: flex-end; /* 닉네임도 오른쪽 정렬 */
         }
         .msg-box.admin .nickname {
-            margin-right: 5px;
-            margin-bottom: 5px;
-            font-size: 13px;
-            color: #0d47a1;
-            font-weight: 900;
-        }
-        .msg-box.admin .content-wrapper {
-            display: flex;
-            flex-direction: row-reverse; /* 시간 | 말풍선 순서로 배치 */
-            align-items: flex-end;
-        }
-        .msg-box.admin .message {
-            background-color: #e3f2fd;
-            border: 2px solid #2196f3;
-            border-radius: 15px 0 15px 15px; /* 오른쪽 위만 뾰족하게 */
-            color: #333;
-            font-weight: bold;
-        }
-
-        /* 시스템 메시지 (가운데) */
-        .system { 
-            align-self: center; 
-            margin: 10px 0; 
-            text-align: center;
-        }
-        .system span { 
-            background-color: #eee; color: #666; 
-            padding: 5px 15px; border-radius: 20px; font-size: 12px; 
-            display: inline-block;
-        }
-
-        /* 말풍선 공통 디자인 */
-        .message {
-            padding: 10px 15px;
-            font-size: 15px;
-            word-break: break-all; /* 긴 단어 줄바꿈 */
-            white-space: pre-wrap; /* 엔터 인식 */
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            position: relative;
-        }
-
-        /* 멘션 라벨 */
-        .mention-label {
-            display: block;
-            font-size: 11px;
-            font-weight: bold;
-            color: #2196f3;
-            margin-bottom: 4px;
-            border-bottom: 1px dashed #aecdff;
-            padding-bottom: 2px;
-        }
-
-        /* 시간 디자인 */
-        .time {
-            font-size: 10px;
-            color: #aaa;
-            margin: 0 5px;
-            white-space: nowrap; /* 시간 줄바꿈 방지 */
-            margin-bottom: 2px; /* 바닥에서 살짝 띄우기 */
-        }
-
-        /* 링크 스타일 */
-        a { color: #007bff; text-decoration: underline; cursor: pointer; }
-    </style>
-</head>
-<body>
-    <h1 style="text-align: center; color: #333;">💬 채팅방</h1>
-    
-    <div id="userStatus">현재 접속자: <strong>0명</strong> (로딩중...)</div>
-    <div id="chatBox"></div>
-    
-    <div class="input-container">
-        <input type="text" id="nickname" placeholder="닉네임(15자 이내,공백불가)" maxlength="20" 
-               oninput="this.value = this.value.replace(/\s/g, '')">
-        <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)" onkeydown="handleKeyDown(event)">
-        <button onclick="sendMyMessage()">전송</button>
-    </div>
-
-    <script>
-        var socket = io({transports: ['websocket', 'polling']});
-        
-        var myMsgHistory = [];  
-        var historyIndex = -1;  
-        var tempMsg = "";
-        
-        function linkify(text) {
-            var urlRegex = /(https?:\/\/[^\s]+)/g;
-            return text.replace(urlRegex, function(url) {
-                return '<a href="' + url + '" target="_blank">' + url + '</a>';
-            });
-        }
-
-        function handleKeyDown(e) {
-            var chatInput = document.getElementById('chatInput');
-
-            if (e.key === "ArrowUp") {
-                e.preventDefault(); 
-                if (historyIndex === -1) {
-                    tempMsg = chatInput.value;
-                    historyIndex = myMsgHistory.length - 1; 
-                } else if (historyIndex > 0) {
-                    historyIndex--; 
-                }
-                if (historyIndex >= 0 && myMsgHistory[historyIndex]) {
-                    chatInput.value = myMsgHistory[historyIndex];
-                }
-            }
-            else if (e.key === "ArrowDown") {
-                e.preventDefault();
-                if (historyIndex !== -1) {
-                    if (historyIndex < myMsgHistory.length - 1) {
-                        historyIndex++; 
-                        chatInput.value = myMsgHistory[historyIndex];
-                    } else {
-                        historyIndex = -1;
-                        chatInput.value = tempMsg;
-                    }
-                }
-            }
-        }
-
-        function sendMyMessage() {
-            var nickInput = document.getElementById('nickname');
-            var chatInput = document.getElementById('chatInput');
-            var msg = chatInput.value;
-            var nick = nickInput.value;
-            var newmsg = msg.replace(/\s/g, "");
-
-            if (nick.trim() === "") {
-                alert("너가 닉네임을 입력하지 않으면 그건 너가 이름이 없다는건가?");
-                nickInput.value = ""; 
-                nickInput.focus();
-                return; 
-            }
-
-            if (nick.length > 15 && !nick.includes("#064473") && !nick.includes("#14141815")) {
-                alert("닉네임은 15글자까지만하세요......");
-                nickInput.value = ""; 
-                nickInput.focus();
-                return; 
-            }
-
-            if (newmsg.length > 150) {
-                alert("메세지 겁나기네 150글자까지만 봐준다 도배하지마. 참고로 공백 제외 150글자임ㅋ");
-                chatInput.focus();
-                return; 
-            }
-
-            if(msg.trim() !== "") {
-                socket.emit('my_chat', { name: nick, msg: msg });
-                
-                myMsgHistory.push(msg); 
-                historyIndex = -1; 
-                tempMsg = "";      
-
-                chatInput.value = ""; 
-            }
-        }
-
-        function handleEnter(e) { if (e.key === "Enter") sendMyMessage(); }
-
-        // 👇 [수정] 멘션 표시 기능 추가된 최신 버전!
-        socket.on('my_chat', function(data) {
-            var chatBox = document.getElementById('chatBox');
-            
-            // 1. 링크 변환
-            var finalMsg = data.msg;
-            if (!data.msg.includes('<a href')) {
-                finalMsg = linkify(data.msg);
-            }
-
-            // 2. 시간
-            var timeStr = data.time ? data.time : "";
-
-            // 3. 멘션
-            var mentionHtml = "";
-            if (data.mention) {
-                mentionHtml = `<span class='mention-label'>@${data.mention}에게</span>`;
-            }
-
-            var html = "";
-
-            // [시스템 메시지] (가운데 정렬)
-            if (data.role === 'system') {
-                html = `<div class='system'>
-                            <span>${finalMsg} <span style='color:#bbb; font-size:10px;'>(${timeStr})</span></span>
-                        </div>`;
-            } 
-            // [관리자 메시지] (오른쪽 정렬)
-            else if (data.role === 'admin') {
-                html = `<div class='msg-box admin'>
-                            <span class='nickname'>${data.name} ✔️(Official)</span>
-                            <div class='content-wrapper'>
-                                <div class='message'>
-                                    ${mentionHtml}
-                                    ${finalMsg}
-                                </div>
-                                <span class='time'>${timeStr}</span>
-                            </div>
-                        </div>`;
-            } 
-            // [일반 메시지] (왼쪽 정렬)
-            else {
-                html = `<div class='msg-box normal'>
-                            <span class='nickname'>${data.name}</span>
-                            <div class='content-wrapper'>
-                                <div class='message'>
-                                    ${mentionHtml}
-                                    ${finalMsg}
-                                </div>
-                                <span class='time'>${timeStr}</span>
-                            </div>
-                        </div>`;
-            }
-
-            chatBox.innerHTML += html;
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
-
-            chatBox.innerHTML += html;
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
-
-        socket.on('update_users', function(data) {
-            var statusDiv = document.getElementById('userStatus');
-            var userNames = data.users.join(", ");
-            statusDiv.innerHTML = `현재 접속자: <strong>${data.count}명</strong> (${userNames})`;
-        });
-
-        socket.on('disconnect', function() {
-            var chatBox = document.getElementById('chatBox');
-            chatBox.innerHTML += "<div class='system' style='color:red; font-weight:bold;'>🚫 연결이 끊어졌습니다.</div>";
-            document.getElementById('chatInput').disabled = true;
-            document.querySelector('button').disabled = true;
-        });
-    </script>
-</body>
-</html>
-
+            margin-right: 5px; margin-bottom: 5px;
+            font-size: 13px; color: #0d47a1; font-weight: 900;
