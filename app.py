@@ -224,22 +224,35 @@ def handle_my_chat(data):
             return
 
     # 5. 일반 메시지 전송
-    mention_target = None
-    if msg.startswith("@"):
-        # 2. 첫 번째 공백까지만 잘라서 닉네임 추출 ("@오주환 안녕" -> "@오주환")
-        first_word = msg.split(" ")[0]
-        if len(first_word) > 1:
-            mention_target = first_word[1:]
-    response_data = {'name': real_name, 'msg': msg, 'role': role, 'time': get_current_time(), 'mention': mention_target}
+mention_target = None
     
-    # ❌ [수정] messages.append(response_data) <- 이거 지웠음! (save_msg 안에서 이미 하고 있음)
-    save_msg(response_data)
+    # 1. 메시지가 '@'로 시작하는지 확인
+    if msg.startswith("@"):
+        # 띄어쓰기를 기준으로 딱 2동강 냄! 
+        # 예: "@오주환 밥 먹자" -> ["@오주환", "밥 먹자"]
+        parts = msg.split(" ", 1) 
         
+        first_word = parts[0] # "@오주환"
+        
+        # "@" 뒤에 이름이 제대로 있다면
+        if len(first_word) > 1:
+            mention_target = first_word[1:] # 맨 앞 '@' 떼고 이름만 저장 ("오주환")
+            
+            # 2. [핵심] 메시지 본문에서 닉네임 삭제하기
+            if len(parts) > 1:
+                # 뒤에 할 말이 있으면, 그 할 말만 메시지로 남김!
+                msg = parts[1] 
+            else:
+                # 할 말 없이 "@오주환" 만 보냈다면?
+                msg = "🔔 (콕 찔렀습니다)" # 빈 말풍선 대신 멘트 넣기
+    
+    response_data = {
+        'name': real_name, 
+        'msg': msg, 
+        'role': role, 
+        'time': get_current_time(),
+        'mention': mention_target 
+    }
+    
+    save_msg(response_data)
     emit('my_chat', response_data, broadcast=True)
-
-if __name__ == '__main__':
-    socketio.run(app, debug=True)
-
-
-
-
