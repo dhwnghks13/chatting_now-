@@ -223,8 +223,8 @@ def handle_my_chat(data):
             emit('my_chat', noti, broadcast=True)
             return
 
-    # 5. 일반 메시지 전송
-mention_target = None
+    # 6. 일반 메시지 전송
+    mention_target = None
     
     # 1. 메시지가 '@'로 시작하는지 확인
     if msg.startswith("@"):
@@ -256,3 +256,4 @@ mention_target = None
     
     save_msg(response_data)
     emit('my_chat', response_data, broadcast=True)
+
