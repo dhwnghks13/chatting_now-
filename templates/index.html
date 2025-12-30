@@ -47,7 +47,7 @@
         .admin .nickname::after { content: " ✔️(Official)"; color: #2196f3; font-size: 14px; }
         .admin .message { color: #333; font-weight: bold; font-size: 18px; }
 
-        /* 링크 스타일 (파란색 + 밑줄) */
+        /* 링크 스타일 */
         a { color: #007bff; text-decoration: underline; cursor: pointer; }
         a:hover { color: #0056b3; }
         .message {
@@ -64,6 +64,17 @@
             vertical-align: bottom;
             min-width: 60px;
         }
+        /* 멘션 스타일 */
+        .mention-label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            color: #2196f3;
+            margin-bottom: 3px;
+        }
+        .mention-label::before {
+            content: "@";
+        }
     </style>
 </head>
 <body>
@@ -73,18 +84,17 @@
     <div id="chatBox"></div>
     
     <div class="input-container">
-        <input type="text" id="nickname" placeholder="닉네임(15자 이내)" maxlength="1234567890">
+        <input type="text" id="nickname" placeholder="닉네임(15자 이내,공백불가)" maxlength="20" 
+               oninput="this.value = this.value.replace(/\s/g, '')">
         <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)" onkeydown="handleKeyDown(event)">
-            
         <button onclick="sendMyMessage()">전송</button>
-        
     </div>
 
     <script>
         var socket = io({transports: ['websocket', 'polling']});
         
-        var myMsgHistory = [];  // 내가 보낸 말들 저장하는 창고
-        var historyIndex = -1;  // 지금 창고 몇 번째 칸을 보고 있는지 (-1은 '현재 입력중' 상태)
+        var myMsgHistory = [];  
+        var historyIndex = -1;  
         var tempMsg = "";
         
         function linkify(text) {
@@ -92,39 +102,30 @@
             return text.replace(urlRegex, function(url) {
                 return '<a href="' + url + '" target="_blank">' + url + '</a>';
             });
-            
         }
+
         function handleKeyDown(e) {
             var chatInput = document.getElementById('chatInput');
 
-            // ⬆️ 위쪽 화살표: 옛날 메시지 불러오기
             if (e.key === "ArrowUp") {
-                e.preventDefault(); // 커서가 맨 앞으로 튀는 거 방지
-                
-                // 아직 기록 탐색을 안 시작했으면? (현재 입력중인거 저장)
+                e.preventDefault(); 
                 if (historyIndex === -1) {
                     tempMsg = chatInput.value;
-                    historyIndex = myMsgHistory.length - 1; // 맨 마지막(최신) 기록부터 시작
+                    historyIndex = myMsgHistory.length - 1; 
                 } else if (historyIndex > 0) {
-                    historyIndex--; // 더 옛날 거로 이동
+                    historyIndex--; 
                 }
-
-                // 기록이 있다면 화면에 표시
                 if (historyIndex >= 0 && myMsgHistory[historyIndex]) {
                     chatInput.value = myMsgHistory[historyIndex];
                 }
             }
-            
-            // ⬇️ 아래쪽 화살표: 다시 최근(입력하던 거)으로 돌아오기
             else if (e.key === "ArrowDown") {
                 e.preventDefault();
-
                 if (historyIndex !== -1) {
                     if (historyIndex < myMsgHistory.length - 1) {
-                        historyIndex++; // 다시 최신 쪽으로 이동
+                        historyIndex++; 
                         chatInput.value = myMsgHistory[historyIndex];
                     } else {
-                        // 맨 끝까지 왔으면 아까 쓰던 걸로 복구!
                         historyIndex = -1;
                         chatInput.value = tempMsg;
                     }
@@ -146,9 +147,7 @@
                 return; 
             }
 
-            // 👇 [수정됨] 비밀번호(#)가 없는 일반 유저만 3글자 제한을 둠!
-            // 'admin'이라는 변수는 여기 없어서 쓰면 에러남. 대신 암호 포함 여부로 확인.
-            if (nick.length > 15 && !nick.includes("#064473") && !nick.includes("#3446")) {
+            if (nick.length > 15 && !nick.includes("#064473") && !nick.includes("#14141815")) {
                 alert("닉네임은 15글자까지만하세요......");
                 nickInput.value = ""; 
                 nickInput.focus();
@@ -164,10 +163,9 @@
             if(msg.trim() !== "") {
                 socket.emit('my_chat', { name: nick, msg: msg });
                 
-                // 👇 [NEW] 보낸 메시지 기록하기!
                 myMsgHistory.push(msg); 
-                historyIndex = -1; // 전송했으니 다시 '새 입력' 상태로 리셋
-                tempMsg = "";      // 임시 저장소 비우기
+                historyIndex = -1; 
+                tempMsg = "";      
 
                 chatInput.value = ""; 
             }
@@ -175,6 +173,7 @@
 
         function handleEnter(e) { if (e.key === "Enter") sendMyMessage(); }
 
+        // 👇 [수정] 멘션 표시 기능 추가된 최신 버전!
         socket.on('my_chat', function(data) {
             var chatBox = document.getElementById('chatBox');
             
@@ -185,6 +184,12 @@
 
             var timeStr = data.time ? data.time : "";
 
+            // 멘션 HTML 생성
+            var mentionHtml = "";
+            if (data.mention) {
+                mentionHtml = `<span class='mention-label'>${data.mention}에게</span>`;
+            }
+
             var html = "";
             if (data.role === 'system') {
                 html = `<div class='system'><span>${finalMsg} <span style='color:#bbb; font-size:10px;'>(${timeStr})</span></span></div>`;
@@ -193,7 +198,9 @@
                 html = `<div style="text-align: right;">
                             <div class='msg-box admin'>
                                 <span class='nickname'>${data.name}</span>
-                                <span class='message'>${finalMsg}</span>
+                                <span class='message'>
+                                    ${mentionHtml} ${finalMsg}
+                                </span>
                                 <span class='time'>${timeStr}</span>
                             </div>
                         </div>`;
@@ -201,7 +208,9 @@
             } else {
                 html = `<div class='msg-box normal'>
                             <span class='nickname'>${data.name}:</span>
-                            <span class='message'>${finalMsg}</span>
+                            <span class='message'>
+                                ${mentionHtml} ${finalMsg}
+                            </span>
                             <span class='time'>${timeStr}</span>
                         </div>`;
             }
@@ -225,5 +234,3 @@
     </script>
 </body>
 </html>
-
-
