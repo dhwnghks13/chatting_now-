@@ -1,10 +1,9 @@
 import eventlet
-from flask import request
-from datetime import datetime, timedelta
-eventlet.monkey_patch()
+eventlet.monkey_patch()    # ⭕ 무조건 1등으로 실행!
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request # 그 다음에 Flask 불러오기
 from flask_socketio import SocketIO, emit, disconnect
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -184,4 +183,5 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
 
