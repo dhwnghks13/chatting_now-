@@ -5,3 +5,4 @@ gunicorn==21.2.0
 python-socketio==5.10.0
 python-engineio==4.8.0
 Werkzeug==2.3.7
+requests
