@@ -257,3 +257,4 @@ def handle_my_chat(data):
     save_msg(response_data)
     emit('my_chat', response_data, broadcast=True)
 
+
