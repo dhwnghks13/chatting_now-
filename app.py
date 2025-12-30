@@ -4,6 +4,9 @@ eventlet.monkey_patch()    # ⭕ 무조건 1등으로 실행!
 from flask import Flask, render_template, request # 그 다음에 Flask 불러오기
 from flask_socketio import SocketIO, emit, disconnect
 from datetime import datetime, timedelta
+import requests  # 👈 [NEW] 인터넷 접속용
+import csv       # 👈 [NEW] 데이터 분석용
+import io        # 👈 [NEW] 데이터 변환용
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -14,6 +17,8 @@ ADMIN_PASSWORD = "#064473"
 ADMIN_PASSWORD2 = "#14141815"
 users = {} 
 thread = None
+# 👇 아까 1단계에서 복사한 '웹에 게시' 링크를 따옴표 안에 넣어!
+CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQu58p5LyRjvlIq-C9ryUfWHgNAkT8-Rlxo7O2LYTuylieIk9SWFc_J8oGKLNK7pkJe-5BSqafcoczx/pub?output=csv"
 
 # 👇 설문조사 링크
 SURVEY_LINK = "https://naver.me/5ixdyLOe"
@@ -167,6 +172,57 @@ def handle_my_chat(data):
         except:
             pass
 
+    # 5. [자동] 설문 결과 실시간 집계 (/설문결과)
+    if role == 'admin' and msg == "/설문결과":
+        try:
+            # 1. 구글 시트에서 데이터 가져오기
+            response = requests.get(CSV_URL)
+            response.encoding = 'utf-8' # 한글 깨짐 방지
+            
+            # 2. 데이터 읽기
+            csv_data = response.text
+            reader = csv.reader(io.StringIO(csv_data))
+            next(reader) # 첫 번째 줄(질문 제목)은 건너뛰기
+            
+            # 3. 투표수 세기 (두 번째 칸[1]에 답변이 있다고 가정)
+            vote_counts = {}
+            total_votes = 0
+            
+            for row in reader:
+                if len(row) > 1: # 데이터가 있는 줄만
+                    answer = row[1] # 0번은 타임스탬프, 1번이 첫번째 질문 답변
+                    vote_counts[answer] = vote_counts.get(answer, 0) + 1
+                    total_votes += 1
+            
+            # 4. 결과 메시지 만들기
+            result_text = f"📊 [실시간 설문 결과] (총 {total_votes}명 참여)\n"
+            
+            # 1등부터 순서대로 보여주기
+            sorted_votes = sorted(vote_counts.items(), key=lambda x: x[1], reverse=True)
+            
+            rank = 1
+            for answer, count in sorted_votes:
+                percent = round((count / total_votes) * 100, 1)
+                result_text += f"\n{rank}위. {answer}: {count}명 ({percent}%)"
+                rank += 1
+                
+            # 5. 전송
+            noti = {
+                'role': 'system',
+                'msg': result_text,
+                'time': get_current_time()
+            }
+            save_msg(noti)
+            emit('my_chat', noti, broadcast=True)
+            print("시스템: 설문 결과 집계 완료", flush=True)
+            return
+
+        except Exception as e:
+            print(f"설문 에러: {e}", flush=True)
+            noti = {'role': 'system', 'msg': '🚫 설문 데이터를 가져오는데 실패했습니다. 링크를 확인해주세요.'}
+            emit('my_chat', noti, broadcast=True)
+            return
+
     # 5. 일반 메시지 전송
     mention_target = None
     if msg.startswith("@"):
@@ -183,5 +239,6 @@ def handle_my_chat(data):
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
+
 
 
