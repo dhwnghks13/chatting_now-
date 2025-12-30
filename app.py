@@ -4,7 +4,6 @@ eventlet.monkey_patch()    # ⭕ 무조건 1등으로 실행!
 from flask import Flask, render_template, request # 그 다음에 Flask 불러오기
 from flask_socketio import SocketIO, emit, disconnect
 from datetime import datetime, timedelta
-import requests  # 👈 [NEW] 인터넷 접속용
 import csv       # 👈 [NEW] 데이터 분석용
 import io        # 👈 [NEW] 데이터 변환용
 
@@ -174,6 +173,8 @@ def handle_my_chat(data):
 
     # 5. [자동] 설문 결과 실시간 집계 (/설문결과)
     if role == 'admin' and msg == "/설문결과":
+        import requests  # 👈 [NEW] 인터넷 접속용
+        
         try:
             # 1. 구글 시트에서 데이터 가져오기
             response = requests.get(CSV_URL)
@@ -256,5 +257,6 @@ def handle_my_chat(data):
     
     save_msg(response_data)
     emit('my_chat', response_data, broadcast=True)
+
 
 
