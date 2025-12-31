@@ -118,13 +118,15 @@
             var msg = chatInput.value;
             var nick = nickInput.value;
             var newmsg = msg.replace(/\s/g, "");
-
+            var admin_list = ["#064473","#80278027","14141815"];
+            var isAdmin = admin_list.some(pass => nick.includes(pass));
+            
             if (nick.trim() === "") {
                 alert("닉네임을 입력해주세요!");
                 nickInput.focus(); return; 
             }
-            if (nick.length > 15 && !data.role === 'admin' {
-                alert("닉네임은 15글자까지만 가능합니다.");
+            if (nick.length > 10 && !isAdmin) {
+                alert("닉네임은 10글자까지만 가능합니다.");
                 nickInput.value = ""; nickInput.focus(); return; 
             }
             if (newmsg.length > 150) {
@@ -186,5 +188,6 @@
     </script>
 </body>
 </html>
+
 
 
