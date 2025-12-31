@@ -166,35 +166,65 @@ def handle_my_chat(data):
             pass
 
     # 5. [자동] 설문 결과 실시간 집계 (/설문결과)
+    # 5. [자동] 설문 결과 실시간 집계 (/설문결과)
     if role == 'admin' and msg == "/설문결과":
         try:
-            # 👇 [필살기] 리눅스 명령어(curl)로 강제 다운로드
-            # 파이썬 네트워크 안 씀. 무조건 됨.
+            # 1. 리눅스 명령어로 데이터 가져오기 (성공한 그 코드!)
             cmd = ["curl", "-L", "-s", CSV_URL]
             result = subprocess.run(cmd, capture_output=True, text=True)
             csv_data = result.stdout
             
+            # 2. 데이터 읽기
             reader = csv.reader(io.StringIO(csv_data))
-            next(reader) 
+            header = next(reader) # 첫 줄(제목) 건너뛰기
             
-            vote_counts = {}
-            total_votes = 0
+            # 저장할 변수들
+            good_points = []   # 1번: 좋은점
+            new_features = []  # 2번: 추가 기능
+            bad_points = []    # 3번: 불편한점
+            ratings = {}       # 4번: 평점 (숫자 세기)
+            total_count = 0
             
             for row in reader:
-                if len(row) > 1: 
-                    answer = row[1] 
-                    vote_counts[answer] = vote_counts.get(answer, 0) + 1
-                    total_votes += 1
+                # 데이터가 꽉 찬 줄만 읽기 (최소 5칸: 타임스탬프+질문4개)
+                if len(row) >= 5:
+                    total_count += 1
+                    
+                    # 텍스트 내용 저장 (비어있지 않으면)
+                    if row[1].strip(): good_points.append(row[1])
+                    if row[2].strip(): new_features.append(row[2])
+                    if row[3].strip(): bad_points.append(row[3])
+                    
+                    # 평점 카운트
+                    rating = row[4].strip()
+                    if rating:
+                        ratings[rating] = ratings.get(rating, 0) + 1
             
-            result_text = f"📊 [실시간 설문 결과] (총 {total_votes}명 참여)\n"
-            sorted_votes = sorted(vote_counts.items(), key=lambda x: x[1], reverse=True)
+            # 3. 결과 메시지 예쁘게 만들기
+            result_text = f"📊 [설문 상세 분석] (총 {total_count}명 참여)\n"
             
-            rank = 1
-            for answer, count in sorted_votes:
-                percent = round((count / total_votes) * 100, 1)
-                result_text += f"\n{rank}위. {answer}: {count}명 ({percent}%)"
-                rank += 1
+            # (1) 평점 통계
+            result_text += "\n⭐ [평점 현황]\n"
+            sorted_ratings = sorted(ratings.items(), key=lambda x: x[1], reverse=True)
+            for r, c in sorted_ratings:
+                result_text += f"- {r}: {c}명\n"
                 
+            # (2) 서술형 답변 보여주기 (너무 길면 최신 3개만 보여주기)
+            def get_summary(title, data_list):
+                text = f"\n🗣️ [{title} (최신 의견)]\n"
+                # 뒤에서부터 3개만 자르기 (최신순)
+                for item in data_list[-3:]:
+                    text += f"- {item}\n"
+                if len(data_list) == 0: text += "- (의견 없음)\n"
+                return text
+
+            result_text += get_summary("🥰 채팅방의 좋은점", good_points)
+            result_text += get_summary("💡 추가됐으면 하는 기능", new_features)
+            result_text += get_summary("😤 채팅방의 불편한점", bad_points)
+            
+            result_text += "\n(더 자세한 내용은 엑셀에서 확인하세요!)"
+
+            # 4. 전송
             noti = {
                 'role': 'system',
                 'msg': result_text,
@@ -206,7 +236,7 @@ def handle_my_chat(data):
 
         except Exception as e:
             print(f"설문 에러: {e}", flush=True)
-            noti = {'role': 'system', 'msg': '🚫 설문 데이터를 가져오는데 실패했습니다.'}
+            noti = {'role': 'system', 'msg': '🚫 설문 데이터를 분석하는 중 에러가 발생했습니다.'}
             emit('my_chat', noti, broadcast=True)
             return
 
@@ -232,3 +262,4 @@ def handle_my_chat(data):
     
     save_msg(response_data)
     emit('my_chat', response_data, broadcast=True)
+
