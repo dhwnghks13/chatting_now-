@@ -15,6 +15,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 messages = []
 ADMIN_PASSWORD = "#064473" 
 ADMIN_PASSWORD2 = "#14141815"
+ADMIN_PASSWORD3 = "#80278027"
 users = {} 
 thread = None
 
@@ -98,15 +99,18 @@ def handle_my_chat(data):
     real_name = original_name
 
     # 1. 관리자 권한 심사
-    if ADMIN_PASSWORD in original_name or ADMIN_PASSWORD2 in original_name:
+    if ADMIN_PASSWORD in original_name or ADMIN_PASSWORD2 in original_name or ADMIN_PASSWORD3 in original_name:
         if "오주환" in original_name:
             role = 'admin'
             real_name = "오주환"
         elif "이다운" in original_name:
             role = 'admin' 
             real_name = "이다운"
+        elif "이태윤" in original_name:
+            role = 'admin'
+            real_name = "이태윤"
             
-    elif original_name.strip() == "오주환" or original_name.strip() == "이다운":
+    elif original_name.strip() == "오주환" or original_name.strip() == "이다운" or original_name.strip() == "이태윤":
         role = 'normal'
         real_name = "남을 따라하려는 자신을 잊은 사람" 
 
@@ -262,4 +266,5 @@ def handle_my_chat(data):
     
     save_msg(response_data)
     emit('my_chat', response_data, broadcast=True)
+
 
