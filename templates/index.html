@@ -62,7 +62,7 @@
     <div id="chatBox"></div>
     
     <div class="input-container">
-        <input type="text" id="nickname" placeholder="닉네임(공백불가)" maxlength="20" oninput="checkNickname(this)">
+        <input type="text" id="nickname" placeholder="닉네임(공백불가,20글자이내)" maxlength="1234567890" oninput="checkNickname(this)">
         <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)" onkeydown="handleKeyDown(event)">
         <button onclick="sendMyMessage()">전송</button>
     </div>
@@ -125,8 +125,8 @@
                 alert("닉네임을 입력해주세요!");
                 nickInput.focus(); return; 
             }
-            if (nick.length > 10 && !isAdmin) {
-                alert("닉네임은 10글자까지만 가능합니다.");
+            if (nick.length > 20 && !isAdmin) {
+                alert("닉네임은 20글자까지만 가능합니다.");
                 nickInput.value = ""; nickInput.focus(); return; 
             }
             if (newmsg.length > 150) {
@@ -188,6 +188,7 @@
     </script>
 </body>
 </html>
+
 
 
 
