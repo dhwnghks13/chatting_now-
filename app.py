@@ -99,6 +99,33 @@ def handle_my_chat(data):
     real_name = original_name
 
     # 1. 관리자 권한 심사
+    if ADMIN_PASSWORD in original_name or ADMIN_PASSWORD2 in original_name:
+        if "오주환" in original_name:
+            role = 'admin'
+            real_name = "오주환"
+        elif "이다운" in original_name:
+            role = 'admin'
+            real_name = "이다운"
+            
+    elif original_name.strip() == "오주환" or original_name.strip() == "이다운":
+        role = 'normal'
+        real_name = "남을 따라하려는 자신을 잊은 사람" 
+
+    # 🚨 [NEW] 닉네임 중복 검사 (여기가 추가된 핵심!) 🚨
+    # users 장부를 한 명씩 확인한다.
+    for sid, name in users.items():
+        # 내 아이디(request.sid)가 아닌데, 나랑 똑같은 이름을 쓰는 사람이 있다면?
+        if sid != request.sid and name == real_name:
+            # 에러 메시지 보내고 함수 끝내기 (전송 안 함)
+            noti = {'role': 'system', 'msg': f'🚫 [{real_name}] 닉네임은 이미 사용 중입니다!'}
+            emit('my_chat', noti) # 나한테만 보냄 (broadcast=True 안 씀)
+            return 
+
+    # 중복이 아니면 장부에 기록
+    users[request.sid] = real_name 
+    broadcast_user_list()
+
+    # 1. 관리자 권한 심사
     if ADMIN_PASSWORD in original_name or ADMIN_PASSWORD2 in original_name or ADMIN_PASSWORD3 in original_name:
         if "오주환" in original_name:
             role = 'admin'
@@ -266,5 +293,6 @@ def handle_my_chat(data):
     
     save_msg(response_data)
     emit('my_chat', response_data, broadcast=True)
+
 
 
