@@ -117,7 +117,7 @@ def handle_my_chat(data):
         # 내 아이디(request.sid)가 아닌데, 나랑 똑같은 이름을 쓰는 사람이 있다면?
         if sid != request.sid and name == real_name:
             # 에러 메시지 보내고 함수 끝내기 (전송 안 함)
-            noti = {'role': 'system', 'msg': f'🚫 [{real_name}] 닉네임은 이미 사용 중입니다!'}
+            noti = {'role': 'system', 'msg': f'🚫 [{real_name}] 닉네임은 이미 사용 중입니다!(이 메세지는 당신에게만 보여요!)'}
             emit('my_chat', noti) # 나한테만 보냄 (broadcast=True 안 씀)
             return 
 
@@ -293,6 +293,7 @@ def handle_my_chat(data):
     
     save_msg(response_data)
     emit('my_chat', response_data, broadcast=True)
+
 
 
 
