@@ -125,24 +125,6 @@ def handle_my_chat(data):
     users[request.sid] = real_name 
     broadcast_user_list()
 
-    # 1. 관리자 권한 심사
-    if ADMIN_PASSWORD in original_name or ADMIN_PASSWORD2 in original_name or ADMIN_PASSWORD3 in original_name:
-        if "오주환" in original_name:
-            role = 'admin'
-            real_name = "오주환"
-        elif "이다운" in original_name:
-            role = 'admin' 
-            real_name = "이다운"
-        elif "이태윤" in original_name:
-            role = 'admin'
-            real_name = "이태윤"
-            
-    elif original_name.strip() == "오주환" or original_name.strip() == "이다운" or original_name.strip() == "이태윤":
-        role = 'normal'
-        real_name = "남을 따라하려는 자신을 잊은 사람" 
-
-    users[request.sid] = real_name 
-    broadcast_user_list()
 
     # 2. 강퇴 기능
     if role == 'admin' and msg.startswith("/강퇴 "):
@@ -293,6 +275,7 @@ def handle_my_chat(data):
     
     save_msg(response_data)
     emit('my_chat', response_data, broadcast=True)
+
 
 
 
