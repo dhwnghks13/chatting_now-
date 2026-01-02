@@ -62,7 +62,7 @@
     <div id="chatBox"></div>
     
     <div class="input-container">
-        <input type="text" id="nickname" placeholder="닉네임(공백불가,20글자이내)" maxlength="1234567890" oninput="checkNickname(this)">
+        <input type="text" id="nickname" placeholder="닉네임(공백불가,20글자이내,중복불가)" maxlength="1234567890" oninput="checkNickname(this)">
         <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)" onkeydown="handleKeyDown(event)">
         <button onclick="sendMyMessage()">전송</button>
     </div>
@@ -188,6 +188,7 @@
     </script>
 </body>
 </html>
+
 
 
 
