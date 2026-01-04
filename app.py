@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import subprocess # 👈 [핵무기] 리눅스 명령어 쓰는 도구
 import csv
 import io
+import re
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -34,6 +35,24 @@ def save_msg(data):
     messages.append(data)
     if len(messages) > 150:
         messages.pop(0)
+
+# 👇 [NEW] 유튜브 링크에서 썸네일과 영상 주소를 추출하는 함수
+def extract_youtube_data(msg):
+    # 유튜브 주소를 찾아내는 강력한 정규표현식 (짧은 주소, 긴 주소 다 됨)
+    youtube_regex = (
+        r'(https?://)?(www\.)?'
+        r'(youtube|youtu|youtube-nocookie)\.(com|be)/'
+        r'(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})')
+    
+    match = re.search(youtube_regex, msg)
+    if match:
+        video_id = match.group(6) # 정규식에서 11자리 영상 ID만 쏙 뽑아냄
+        # 유튜브 공식 썸네일 이미지 주소 (hqdefault.jpg가 고화질)
+        thumbnail_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+        # 실제 클릭해서 이동할 영상 주소
+        video_link = f"https://www.youtube.com/watch?v={video_id}"
+        return thumbnail_url, video_link
+    return None, None
 
 def get_current_time():
     now = datetime.utcnow() + timedelta(hours=9)
@@ -267,6 +286,8 @@ def handle_my_chat(data):
                 msg = parts[1] 
             else:
                 msg = "🔔 (콕 찔렀습니다)" 
+
+    yt_thumb, yt_link = extract_youtube_data(msg)
     
     response_data = {
         'name': real_name, 
@@ -274,10 +295,13 @@ def handle_my_chat(data):
         'role': role, 
         'time': get_current_time(),
         'mention': mention_target 
+        'yt_thumb': yt_thumb,
+        'yt_link': yt_link
     }
     
     save_msg(response_data)
     emit('my_chat', response_data, broadcast=True)
+
 
 
 
