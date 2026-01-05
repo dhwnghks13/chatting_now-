@@ -74,6 +74,52 @@
         .youtube-preview:hover {
             opacity: 0.9;
         }
+        
+        /* 👇 [NEW] 일반 링크 미리보기 카드 스타일 */
+.link-card {
+    display: flex;
+    margin-top: 10px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+    background: white;
+    max-width: 350px;
+    text-decoration: none; /* 링크 밑줄 제거 */
+    color: inherit; /* 글자색 상속 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+.link-card:hover { transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+
+.link-card img {
+    width: 100px; /* 썸네일 크기 고정 */
+    height: 100px;
+    object-fit: cover; /* 비율 유지하며 꽉 채우기 */
+}
+
+.link-info {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.link-title {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; /* 말줄임표 */
+}
+
+.link-desc {
+    font-size: 12px;
+    color: #666;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* 두 줄까지만 표시 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
     </style>
 </head>
 <body>
@@ -249,6 +295,7 @@
     </script>
 </body>
 </html>
+
 
 
 
