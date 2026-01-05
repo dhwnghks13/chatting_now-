@@ -89,7 +89,7 @@ def get_link_preview(text):
     try:
         # 3. 사이트 접속 (봇이 아니라 사람인 척 'User-Agent' 헤더 추가)
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
-        response = requests.get(url, headers=headers, timeout=2) # 2초 안에 응답 없으면 포기
+        response = requests.get(url, headers=headers, timeout=0.5) # 2초 안에 응답 없으면 포기
         soup = BeautifulSoup(response.text, 'html.parser')
         
         # 4. 정보 찾기 (og:image, og:title 같은 태그 찾기)
@@ -348,6 +348,7 @@ def handle_my_chat(data):
     
     save_msg(response_data)
     emit('my_chat', response_data, broadcast=True)
+
 
 
 
