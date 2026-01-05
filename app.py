@@ -8,6 +8,8 @@ import subprocess # 👈 [핵무기] 리눅스 명령어 쓰는 도구
 import csv
 import io
 import re
+import requests 
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
@@ -68,6 +70,49 @@ def send_survey():
         save_msg(noti)
         socketio.emit('my_chat', noti)
         print("시스템: 자동 설문 전송 완료", flush=True)
+
+# 👇 [NEW] 일반 웹사이트 미리보기 정보(Open Graph) 긁어오기
+def get_link_preview(text):
+    # 1. 메시지에서 URL 찾기 (http로 시작하는 주소)
+    url_regex = r'(https?://\S+)'
+    match = re.search(url_regex, text)
+    
+    if not match:
+        return None # 주소 없으면 포기
+        
+    url = match.group(1)
+    
+    # 2. 이미 유튜브 로직이 있다면 유튜브는 패스! (유튜브는 전용 함수가 더 예쁘니까)
+    if "youtube.com" in url or "youtu.be" in url:
+        return None 
+
+    try:
+        # 3. 사이트 접속 (봇이 아니라 사람인 척 'User-Agent' 헤더 추가)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        response = requests.get(url, headers=headers, timeout=2) # 2초 안에 응답 없으면 포기
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # 4. 정보 찾기 (og:image, og:title 같은 태그 찾기)
+        og_image = soup.select_one('meta[property="og:image"]')
+        og_title = soup.select_one('meta[property="og:title"]')
+        og_desc = soup.select_one('meta[property="og:description"]')
+        
+        # 5. 찾은 정보 정리 (없으면 빈칸)
+        data = {
+            'url': url,
+            'image': og_image['content'] if og_image else '',
+            'title': og_title['content'] if og_title else url,
+            'description': og_desc['content'] if og_desc else ''
+        }
+        
+        # 이미지가 없으면 미리보기 안 함
+        if not data['image']: return None
+        
+        return data
+
+    except Exception as e:
+        print(f"링크 미리보기 실패: {e}")
+        return None
 
 def broadcast_user_list():
     user_list = list(users.values())
@@ -288,6 +333,7 @@ def handle_my_chat(data):
                 msg = "🔔 (콕 찔렀습니다)" 
 
     yt_thumb, yt_link = extract_youtube_data(msg)
+    link_preview_data = get_link_preview(msg)
     
     response_data = {
         'name': real_name, 
@@ -296,11 +342,13 @@ def handle_my_chat(data):
         'time': get_current_time(),
         'mention': mention_target, 
         'yt_thumb': yt_thumb,
-        'yt_link': yt_link
+        'yt_link': yt_link,
+        'link_data': link_preview_data
     }
     
     save_msg(response_data)
     emit('my_chat', response_data, broadcast=True)
+
 
 
 
