@@ -294,13 +294,14 @@ def handle_my_chat(data):
         'msg': msg, 
         'role': role, 
         'time': get_current_time(),
-        'mention': mention_target 
+        'mention': mention_target, 
         'yt_thumb': yt_thumb,
         'yt_link': yt_link
     }
     
     save_msg(response_data)
     emit('my_chat', response_data, broadcast=True)
+
 
 
 
