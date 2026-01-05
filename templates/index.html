@@ -185,6 +185,20 @@
                     </div>`;
             }
             
+            var linkHtml = "";
+            if (data.link_data) {
+                var d = data.link_data;
+                linkHtml = `
+                    <a href='${d.url}' target='_blank' class='link-card'>
+                        <img src='${d.image}' alt='미리보기'>
+                        <div class='link-info'>
+                            <div class='link-title'>${d.title}</div>
+                            <div class='link-desc'>${d.description}</div>
+                        </div>
+                    </a>
+                `;
+            }
+            
             var imageHtml = "";
             // 메시지가 jpg, png, gif, jpeg, webp 로 끝나는 주소인지 검사
             if (data.msg.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
@@ -235,6 +249,7 @@
     </script>
 </body>
 </html>
+
 
 
 
