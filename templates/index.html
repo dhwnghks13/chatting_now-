@@ -53,6 +53,27 @@
         .mention-label { display: block; font-size: 11px; font-weight: bold; color: #2196f3; margin-bottom: 4px; border-bottom: 1px dashed #aecdff; padding-bottom: 2px; }
         .time { font-size: 10px; color: #aaa; margin: 0 5px; white-space: nowrap; margin-bottom: 2px; }
         a { color: #007bff; text-decoration: underline; cursor: pointer; }
+        /* index.html의 <style> 태그 안에 추가 */
+
+    /* 👇 [NEW] 유튜브 썸네일 컨테이너 스타일 */
+        .youtube-preview {
+            margin-top: 10px;
+            max-width: 300px; /* 너무 크지 않게 최대 너비 제한 */
+            border-radius: 12px; /* 둥근 모서리 */
+            overflow: hidden; /* 둥근 모서리 밖으로 이미지 안 삐져나오게 */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* 살짝 그림자 */
+            cursor: pointer;
+        }    
+        /* 썸네일 이미지 자체 스타일 */
+            .youtube-preview img {
+            width: 100%;
+            height: auto;
+            display: block; /* 이미지 하단 빈 공간 제거 */
+        }
+        /* 마우스 올렸을 때 효과 */
+        .youtube-preview:hover {
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
@@ -142,29 +163,55 @@
 
         function handleEnter(e) { if (e.key === "Enter") sendMyMessage(); }
 
+        // 👇 여기를 통째로 바꿔줘!
         socket.on('my_chat', function(data) {
             var chatBox = document.getElementById('chatBox');
             var finalMsg = data.msg;
+            // 기본 링크 변환 (텍스트에 있는 주소를 파란색 링크로)
             if (!data.msg.includes('<a href')) { finalMsg = linkify(data.msg); }
+            
             var timeStr = data.time ? data.time : "";
             var mentionHtml = data.mention ? `<span class='mention-label'>@${data.mention}에게</span>` : "";
             
+            // 👇 [NEW] 유튜브 썸네일 HTML 만들기
+            var youtubeHtml = "";
+            if (data.yt_thumb && data.yt_link) {
+                // 썸네일 이미지를 클릭하면 유튜브 영상으로 새 창이 열리게 만듦
+                youtubeHtml = `
+                    <div class='youtube-preview'>
+                        <a href='${data.yt_link}' target='_blank'>
+                            <img src='${data.yt_thumb}' alt='유튜브 미리보기'>
+                        </a>
+                    </div>`;
+            }
+            
+            var imageHtml = "";
+            // 메시지가 jpg, png, gif, jpeg, webp 로 끝나는 주소인지 검사
+            if (data.msg.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                // 이미지 태그를 만들어서 보여줌 (스타일: 최대 너비 250px, 둥근 모서리)
+                imageHtml = `<br><a href="${data.msg}" target="_blank">
+                                <img src="${data.msg}" style="max-width: 250px; max-height: 250px; border-radius: 10px; margin-top: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                             </a>`;
+            }
+
             var html = "";
             if (data.role === 'system') {
                 html = `<div class='system'><span>${finalMsg} <span style='color:#bbb; font-size:10px;'>(${timeStr})</span></span></div>`;
             } else if (data.role === 'admin') {
+                // 👇 관리자 메시지에도 youtubeHtml 추가
                 html = `<div class='msg-box admin'>
                             <span class='nickname'>${data.name} ✔️(Official)</span>
                             <div class='content-wrapper'>
-                                <div class='message'>${mentionHtml}${finalMsg}</div>
+                                <div class='message'>${mentionHtml}${finalMsg}${youtubeHtml}${imageHtml}</div>
                                 <span class='time'>${timeStr}</span>
                             </div>
                         </div>`;
             } else {
+                // 👇 일반 메시지에도 youtubeHtml 추가
                 html = `<div class='msg-box normal'>
                             <span class='nickname'>${data.name}</span>
                             <div class='content-wrapper'>
-                                <div class='message'>${mentionHtml}${finalMsg}</div>
+                                <div class='message'>${mentionHtml}${finalMsg}${youtubeHtml}${imageHtml}</div>
                                 <span class='time'>${timeStr}</span>
                             </div>
                         </div>`;
@@ -188,6 +235,7 @@
     </script>
 </body>
 </html>
+
 
 
 
