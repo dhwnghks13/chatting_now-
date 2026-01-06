@@ -196,9 +196,14 @@
                 alert("닉네임은 20글자까지만 가능합니다.");
                 nickInput.value = ""; nickInput.focus(); return; 
             }
-            if (newmsg.length > 300) {
-                alert("메시지가 너무 깁니다 (300자 제한,공백제외).");
+            if (newmsg.length > 1000) {
+                alert("메시지가 너무 깁니다 (1000자 제한,공백제외).");
                 chatInput.focus(); return; 
+            }
+            if (msg.includes('란','루','로','날','드') {
+                alert("어딜 란란루드립을 ㅉㅉ")
+                chatInput.value = "";
+                chatInput.focus; return;
             }
             if(msg.trim() !== "") {
                 socket.emit('my_chat', { name: nick, msg: msg });
@@ -295,6 +300,7 @@
     </script>
 </body>
 </html>
+
 
 
 
