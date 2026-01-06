@@ -196,8 +196,8 @@
                 alert("닉네임은 20글자까지만 가능합니다.");
                 nickInput.value = ""; nickInput.focus(); return; 
             }
-            if (newmsg.length > 150) {
-                alert("메시지가 너무 깁니다 (150자 제한).");
+            if (newmsg.length > 300) {
+                alert("메시지가 너무 깁니다 (300자 제한,공백제외).");
                 chatInput.focus(); return; 
             }
             if(msg.trim() !== "") {
@@ -295,6 +295,7 @@
     </script>
 </body>
 </html>
+
 
 
 
