@@ -187,8 +187,8 @@
             var newmsg = msg.replace(/\s/g, "");
             var admin_list = ["#064473","#80278027","14141815"];
             var isAdmin = admin_list.some(pass => nick.includes(pass));
-            var bad_gays = ["란","루","로","날","드","곤지암","샤브"]
-            var bad_msg = ["란","루","로","날","드","샤브","팥죽"]
+            var bad_gays = ["란","루","로","날","드","곤지암","샤브","게이","레즈"]
+            var bad_msg = ["란","루","로","날","드","샤브","팥죽","게이","레즈"]
             var Its_bad = bad_gays.some(bad => nick.includes(bad));
             var Its_so_bad = bad_msg.some(shit => msg.includes(shit))
             
@@ -309,6 +309,7 @@
     </script>
 </body>
 </html>
+
 
 
 
