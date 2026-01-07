@@ -187,6 +187,8 @@
             var newmsg = msg.replace(/\s/g, "");
             var admin_list = ["#064473","#80278027","14141815"];
             var isAdmin = admin_list.some(pass => nick.includes(pass));
+            var bad_gays = ["란","루","로","날","드"]
+            var Its_bad = bad_gays.some(bad => nick.includes(bad));
             
             if (nick.trim() === "") {
                 alert("닉네임을 입력해주세요!");
@@ -200,7 +202,7 @@
                 alert("메시지가 너무 깁니다 (1000자 제한,공백제외).");
                 chatInput.focus(); return; 
             }
-            if (msg.includes('란','루','로','날','드')){
+            if (Its_bad){
                 alert("어딜 란란루드립을 ㅉㅉ")
                 chatInput.value = "";
                 chatInput.focus; return;
@@ -300,6 +302,7 @@
     </script>
 </body>
 </html>
+
 
 
 
