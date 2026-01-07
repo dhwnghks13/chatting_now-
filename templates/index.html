@@ -187,8 +187,10 @@
             var newmsg = msg.replace(/\s/g, "");
             var admin_list = ["#064473","#80278027","14141815"];
             var isAdmin = admin_list.some(pass => nick.includes(pass));
-            var bad_gays = ["란","루","로","날","드"]
+            var bad_gays = ["란","루","로","날","드","곤지암","샤브"]
+            var bad_msg = ["란","루","로","날","드","샤브","팥죽"]
             var Its_bad = bad_gays.some(bad => nick.includes(bad));
+            var Its_so_bad = bad_msg.some(shit => msg.includes(shit))
             
             if (nick.trim() === "") {
                 alert("닉네임을 입력해주세요!");
@@ -206,6 +208,11 @@
                 alert("어딜 란란루드립을 ㅉㅉ")
                 chatInput.value = "";
                 chatInput.focus; return;
+            }
+            if (Its_so_bad){
+                alert("야 또 쓰래기같은 드립칠려고 그런다 그죠?ㅎㅎ 지워질거예요 내용이")
+                chatInput.value = "";
+                chatInput.focus = ""; return;
             }
             if(msg.trim() !== "") {
                 socket.emit('my_chat', { name: nick, msg: msg });
@@ -302,6 +309,7 @@
     </script>
 </body>
 </html>
+
 
 
 
