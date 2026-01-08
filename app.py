@@ -19,6 +19,7 @@ messages = []
 ADMIN_PASSWORD = "#064473" 
 ADMIN_PASSWORD2 = "#14141815"
 ADMIN_PASSWORD3 = "#80278027"
+ADMIN_PASSWORD4 = "#20150303"
 users = {} 
 thread = None
 
@@ -356,17 +357,19 @@ def handle_my_chat(data):
         # 네 코드에 있는 관리자 비밀번호 리스트를 그대로 사용함
         is_recipient_admin = (ADMIN_PASSWORD in current_user_name or 
                               ADMIN_PASSWORD2 in current_user_name or 
-                              ADMIN_PASSWORD3 in current_user_name)
+                              ADMIN_PASSWORD3 in current_user_name or
+                              ADMIN_PASSWORD4 in current _user_name)
 
         # 보낼 데이터 복사본 만들기
         send_data = base_response.copy()
 
         if is_recipient_admin:
             # 편지 받는 사람이 관리자라면? 실명(ylm)을 슬쩍 끼워넣어줌!
-            send_data['real_name'] = ylm  # HTML에서 보낸 실명 데이터
+            send_data['real_name'] = ilm  # HTML에서 보낸 실명 데이터
 
         # 해당 sid(그 사람)에게만 귓속말로 전송!
         emit('my_chat', send_data, room=sid)
+
 
 
 
