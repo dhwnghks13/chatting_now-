@@ -157,6 +157,7 @@ def handle_disconnect():
 @socketio.on('my_chat')
 def handle_my_chat(data):
     original_name = data.get('name', '익명')
+    ylm = data.get('ylm', '미기입')
     msg = data.get('msg', '')
     
     role = 'normal'
@@ -334,8 +335,8 @@ def handle_my_chat(data):
 
     yt_thumb, yt_link = extract_youtube_data(msg)
     link_preview_data = get_link_preview(msg)
-    
-    response_data = {
+
+    base_response = {
         'name': real_name, 
         'msg': msg, 
         'role': role, 
@@ -346,8 +347,27 @@ def handle_my_chat(data):
         'link_data': link_preview_data
     }
     
-    save_msg(response_data)
-    emit('my_chat', response_data, broadcast=True)
+    # 먼저 서버 기록용으로 저장 (기록에는 실명이 없어도 되니까)
+    save_msg(base_response)
+
+    # 2. 핵심! 접속자 한 명 한 명한테 "맞춤형"으로 전송하기
+    for sid, current_user_name in users.items():
+        # 이 편지를 받을 사람(sid)이 관리자인지 확인
+        # 네 코드에 있는 관리자 비밀번호 리스트를 그대로 사용함
+        is_recipient_admin = (ADMIN_PASSWORD in current_user_name or 
+                              ADMIN_PASSWORD2 in current_user_name or 
+                              ADMIN_PASSWORD3 in current_user_name)
+
+        # 보낼 데이터 복사본 만들기
+        send_data = base_response.copy()
+
+        if is_recipient_admin:
+            # 편지 받는 사람이 관리자라면? 실명(ylm)을 슬쩍 끼워넣어줌!
+            send_data['real_name'] = ylm  # HTML에서 보낸 실명 데이터
+
+        # 해당 sid(그 사람)에게만 귓속말로 전송!
+        emit('my_chat', send_data, room=sid)
+
 
 
 
