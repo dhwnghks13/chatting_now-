@@ -24,7 +24,8 @@
         }
 
         .input-container { display: flex; gap: 10px; }
-        #nickname { width: 20%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+        #nickname { width: 10%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+        #name { width: 10%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;}
         #chatInput { width: 60%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
         button { 
             width: 20%; padding: 12px; background: #2196f3; color: white; 
@@ -129,7 +130,8 @@
     <div id="chatBox"></div>
     
     <div class="input-container">
-        <input type="text" id="nickname" placeholder="닉네임(공백불가,20글자이내,중복불가)" maxlength="1234567890" oninput="checkNickname(this)">
+        <input type="text" id="nickname" placeholder="닉네임(공백불가,20글자이내,중복불가)" maxlength="20" oninput="checkNickname(this)">
+        <input type="text" id="name" placeholder="실명(공백불가,중복불가,개발자만확인가능)" maxlength="3" oninput="checkNickname(this)">
         <input type="text" id="chatInput" placeholder="내용을 입력하세요..." onkeypress="handleEnter(event)" onkeydown="handleKeyDown(event)">
         <button onclick="sendMyMessage()">전송</button>
     </div>
@@ -181,41 +183,21 @@
 
         function sendMyMessage() {
             var nickInput = document.getElementById('nickname');
+            var nameinput = document.getElementById('name');
             var chatInput = document.getElementById('chatInput');
             var msg = chatInput.value;
             var nick = nickInput.value;
+            var name = nameinput.value;
             var newmsg = msg.replace(/\s/g, "");
             var admin_list = ["#064473","#80278027","14141815"];
             var isAdmin = admin_list.some(pass => nick.includes(pass));
-            var bad_gays = ["란란루","로날드","곤지암","샤브","게이","레즈"]
-            var bad_msg = ["란란루","로날드","샤브","팥죽","게이","레즈"]
-            var Its_bad = bad_gays.some(bad => nick.includes(bad));
-            var Its_so_bad = bad_msg.some(shit => msg.includes(shit))
             
-            if (nick.trim() === "") {
+            if (nick.trim() === "" || name.trim() === "") {
                 alert("닉네임을 입력해주세요!");
                 nickInput.focus(); return; 
             }
-            if (nick.length > 20 && !isAdmin) {
-                alert("닉네임은 20글자까지만 가능합니다.");
-                nickInput.value = ""; nickInput.focus(); return; 
-            }
-            if (newmsg.length > 1000) {
-                alert("메시지가 너무 깁니다 (1000자 제한,공백제외).");
-                chatInput.focus(); return; 
-            }
-            if (Its_bad){
-                alert("어딜 란란루드립을 ㅉㅉ")
-                chatInput.value = "";
-                chatInput.focus; return;
-            }
-            if (Its_so_bad){
-                alert("야 또 쓰래기같은 드립칠려고 그런다 그죠?ㅎㅎ 지워질거예요 내용이")
-                chatInput.value = "";
-                chatInput.focus = ""; return;
-            }
             if(msg.trim() !== "") {
-                socket.emit('my_chat', { name: nick, msg: msg });
+                socket.emit('my_chat', { name: nick, msg: msg, ylm: name });
                 myMsgHistory.push(msg); 
                 historyIndex = -1; tempMsg = ""; chatInput.value = ""; 
             }
@@ -225,25 +207,74 @@
 
         // 👇 여기를 통째로 바꿔줘!
         socket.on('my_chat', function(data) {
-            var chatBox = document.getElementById('chatBox');
-            var finalMsg = data.msg;
-            // 기본 링크 변환 (텍스트에 있는 주소를 파란색 링크로)
-            if (!data.msg.includes('<a href')) { finalMsg = linkify(data.msg); }
-            
-            var timeStr = data.time ? data.time : "";
-            var mentionHtml = data.mention ? `<span class='mention-label'>@${data.mention}에게</span>` : "";
-            
-            // 👇 [NEW] 유튜브 썸네일 HTML 만들기
-            var youtubeHtml = "";
-            if (data.yt_thumb && data.yt_link) {
-                // 썸네일 이미지를 클릭하면 유튜브 영상으로 새 창이 열리게 만듦
-                youtubeHtml = `
-                    <div class='youtube-preview'>
-                        <a href='${data.yt_link}' target='_blank'>
-                            <img src='${data.yt_thumb}' alt='유튜브 미리보기'>
-                        </a>
-                    </div>`;
-            }
+    var chatBox = document.getElementById('chatBox');
+    var finalMsg = data.msg;
+    
+    // 1. 링크 파란색으로 만들기
+    if (!data.msg.includes('<a href')) { finalMsg = linkify(data.msg); }
+    
+    var timeStr = data.time ? data.time : "";
+    var mentionHtml = data.mention ? `<span class='mention-label'>@${data.mention}에게</span>` : "";
+    
+    // ⭐ [중요] 실명 표시 로직
+    // 서버가 관리자에게만 'real_name' 데이터를 담아서 보냈을 거야.
+    // 데이터가 있으면 괄호로 실명을 붙이고, 없으면(일반인) 그냥 닉네임만 나옴.
+    var displayName = data.name;
+    if (data.real_name) {
+        displayName += ` <span style="color: #ff5722; font-size: 11px; font-weight: normal;">(${data.real_name})</span>`;
+    }
+
+    // 2. 유튜브 썸네일
+    var youtubeHtml = "";
+    if (data.yt_thumb && data.yt_link) {
+        youtubeHtml = `<div class='youtube-preview'><a href='${data.yt_link}' target='_blank'><img src='${data.yt_thumb}'></a></div>`;
+    }
+
+    // 3. 일반 링크 카드
+    var linkHtml = "";
+    if (data.link_data) {
+        var d = data.link_data;
+        linkHtml = `
+            <a href='${d.url}' target='_blank' class='link-card'>
+                <img src='${d.image}'>
+                <div class='link-info'>
+                    <div class='link-title'>${d.title}</div>
+                    <div class='link-desc'>${d.description}</div>
+                </div>
+            </a>`;
+    }
+
+    // 4. 이미지 미리보기
+    var imageHtml = "";
+    if (data.msg.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+        imageHtml = `<br><a href="${data.msg}" target="_blank">
+                        <img src="${data.msg}" style="max-width: 250px; border-radius: 10px; margin-top: 5px;">
+                     </a>`;
+    }
+
+    // 최종 내용 합치기
+    var contentHtml = `${mentionHtml}${finalMsg}${youtubeHtml}${linkHtml}${imageHtml}`;
+
+    var html = "";
+    if (data.role === 'system') {
+        html = `<div class='system'><span>${finalMsg} <span style='color:#bbb; font-size:10px;'>(${timeStr})</span></span></div>`;
+    } else {
+        // 관리자면 admin 클래스(오른쪽), 일반인이면 normal 클래스(왼쪽)
+        var boxClass = (data.role === 'admin') ? 'admin' : 'normal';
+        var officialMark = (data.role === 'admin') ? ' ✔️(Official)' : '';
+        
+        html = `<div class='msg-box ${boxClass}'>
+                    <span class='nickname'>${displayName}${officialMark}</span>
+                    <div class='content-wrapper'>
+                        <div class='message'>${contentHtml}</div>
+                        <span class='time'>${timeStr}</span>
+                    </div>
+                </div>`;
+    }
+
+    chatBox.innerHTML += html;
+    chatBox.scrollTop = chatBox.scrollHeight;
+});
             
             var linkHtml = "";
             if (data.link_data) {
@@ -309,6 +340,7 @@
     </script>
 </body>
 </html>
+
 
 
 
