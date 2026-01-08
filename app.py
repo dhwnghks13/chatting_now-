@@ -165,7 +165,7 @@ def handle_my_chat(data):
     real_name = original_name
 
     # 1. 관리자 권한 심사
-    if ADMIN_PASSWORD in original_name or ADMIN_PASSWORD2 in original_name or ADMIN_PASSWORD3 in original_name:
+    if ADMIN_PASSWORD in original_name or ADMIN_PASSWORD2 in original_name or ADMIN_PASSWORD3 in original_name or ADMIN_PASSWORD4 in original_name:
         if "오주환" in original_name:
             role = 'admin'
             real_name = "오주환"
@@ -175,7 +175,9 @@ def handle_my_chat(data):
         elif "이태윤" in original_name:
             role = 'admin'
             real_name = "이태윤"
-            
+        elif "김민석" in original_name:
+            role = 'admin'
+            real_name = "김민석"
     elif original_name.strip() == "오주환" or original_name.strip() == "이다운":
         role = 'normal'
         real_name = "남을 따라하려는 자신을 잊은 사람" 
@@ -374,6 +376,7 @@ def handle_my_chat(data):
             emit('my_chat', send_data, room=sid)
         except Exception as e:
             print(f"전송 에러: {e}")
+
 
 
 
