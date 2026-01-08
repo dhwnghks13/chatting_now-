@@ -349,26 +349,32 @@ def handle_my_chat(data):
     }
     
     # 먼저 서버 기록용으로 저장 (기록에는 실명이 없어도 되니까)
+# ... (생략: base_response 정의까지는 동일)
+    
+    # 먼저 서버 기록용으로 저장
     save_msg(base_response)
 
-    # 2. 핵심! 접속자 한 명 한 명한테 "맞춤형"으로 전송하기
+    # 접속자 전원 리스트 (관리자 여부 확인용)
+    admin_pw_list = [ADMIN_PASSWORD, ADMIN_PASSWORD2, ADMIN_PASSWORD3, ADMIN_PASSWORD4]
+
+    # 한 명 한 명에게 맞춤 전송
     for sid, current_user_name in users.items():
-        # 이 편지를 받을 사람(sid)이 관리자인지 확인
-        # 네 코드에 있는 관리자 비밀번호 리스트를 그대로 사용함
-        is_recipient_admin = (ADMIN_PASSWORD in current_user_name or 
-                              ADMIN_PASSWORD2 in current_user_name or 
-                              ADMIN_PASSWORD3 in current_user_name or
-                              ADMIN_PASSWORD4 in current _user_name)
+        try:
+            # 받는 사람이 관리자인지 확인 (공백 제거함!)
+            is_recipient_admin = any(pw in str(current_user_name) for pw in admin_pw_list)
 
-        # 보낼 데이터 복사본 만들기
-        send_data = base_response.copy()
+            # 데이터 복사
+            send_data = base_response.copy()
 
-        if is_recipient_admin:
-            # 편지 받는 사람이 관리자라면? 실명(ylm)을 슬쩍 끼워넣어줌!
-            send_data['real_name'] = ilm  # HTML에서 보낸 실명 데이터
+            if is_recipient_admin:
+                # 관리자에게만 실명(ylm)을 추가해서 보냄
+                send_data['real_name'] = ylm  
 
-        # 해당 sid(그 사람)에게만 귓속말로 전송!
-        emit('my_chat', send_data, room=sid)
+            # 해당 사용자에게만 전송
+            emit('my_chat', send_data, room=sid)
+        except Exception as e:
+            print(f"전송 에러: {e}")
+
 
 
 
