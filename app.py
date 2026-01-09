@@ -104,8 +104,14 @@ def handle_my_chat(data):
     is_admin = any(pw in original_name for pw in ADMIN_PWS)
     if is_admin:
         role = 'admin'
-        for name in ["오주환", "이다운", "이태윤"]:
-            if name in original_name: real_name = name
+        if original_name.startswich("오주환"):
+            real_name = "오주환"
+        elif original_name.startswich("이다운"):
+            real_name = "이다운"
+        elif original_name.startswich("이태윤"):
+            real_name = "이태윤"
+        elif original_name.stratswich("김민석"):
+            real_name = "김민석"
     elif original_name.strip() in ["오주환", "이다운"]:
         real_name = "사칭 방지 시스템 작동 중"
 
