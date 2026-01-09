@@ -3,127 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💬 채팅방</title>
+    <title>💬 실시간 채팅방</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        body { padding: 20px; font-family: sans-serif; background: #f0f2f5; }
-        #chatBox { height: 500px; background: white; border-radius: 15px; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; border: 1px solid #ddd; }
-        .input-container { display: flex; gap: 10px; margin-top: 20px; }
-        #nickname, #name { width: 15%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
-        #chatInput { flex-grow: 1; padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
-        button { padding: 10px 20px; background: #2196f3; color: white; border: none; border-radius: 8px; cursor: pointer; }
-        .msg-box { display: flex; flex-direction: column; max-width: 80%; }
-        .normal { align-self: flex-start; }
-        .admin { align-self: flex-end; align-items: flex-end; }
-        .message { padding: 10px; border-radius: 10px; background: #e9efff; }
-        .admin .message { background: #e3f2fd; border: 2px solid #2196f3; }
-        .nickname { font-size: 12px; font-weight: bold; margin-bottom: 4px; }
-        .system { text-align: center; color: #888; font-size: 12px; }
-        .link-card { display: flex; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; margin-top: 5px; background: white; text-decoration: none; color: black; }
-        .link-card img { width: 80px; height: 80px; object-fit: cover; }
-        .link-info { padding: 10px; font-size: 12px; }
+        body { font-family: 'Apple SD Gothic Neo', sans-serif; background: #f0f2f5; padding: 20px; margin: 0; }
+        #chatBox { height: 75vh; background: white; border-radius: 12px; overflow-y: auto; padding: 20px; border: 1px solid #ddd; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .input-area { display: flex; gap: 8px; margin-top: 15px; }
+        input { border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 14px; }
+        #nickname { width: 15%; }
+        #name { width: 15%; }
+        #chatInput { flex-grow: 1; }
+        button { background: #2196f3; color: white; border: none; border-radius: 8px; cursor: pointer; padding: 0 20px; font-weight: bold; }
+        button:hover { background: #1976d2; }
+        
+        .msg { max-width: 80%; padding: 10px 14px; border-radius: 15px; position: relative; font-size: 15px; word-break: break-all; }
+        .normal { align-self: flex-start; background: #e9efff; color: #333; border-bottom-left-radius: 2px; }
+        .admin { align-self: flex-end; background: #e3f2fd; border: 2px solid #2196f3; color: #1a237e; border-bottom-right-radius: 2px; }
+        .system { align-self: center; background: #f5f5f5; font-size: 12px; color: #777; border-radius: 20px; padding: 5px 15px; }
+        
+        .nick-label { font-size: 12px; font-weight: bold; margin-bottom: 4px; display: block; }
+        .time { font-size: 10px; color: #999; margin-top: 5px; display: block; }
+        .real-name { color: #ff5722; font-weight: normal; font-size: 11px; margin-left: 4px; }
+        .yt-preview img { max-width: 250px; border-radius: 8px; margin-top: 8px; display: block; }
     </style>
 </head>
 <body>
-    <div id="userStatus">접속 중...</div>
     <div id="chatBox"></div>
-    <div class="input-container">
+    <div class="input-area">
         <input type="text" id="nickname" placeholder="닉네임">
-        <input type="text" id="name" placeholder="실명">
-        <input type="text" id="chatInput" placeholder="메시지 입력" onkeypress="if(event.keyCode==13)sendMyMessage()">
-        <button onclick="sendMyMessage()">전송</button>
+        <input type="text" id="name" placeholder="실명(관리자용)">
+        <input type="text" id="chatInput" placeholder="메시지를 입력하세요..." onkeypress="if(event.keyCode==13)send()">
+        <button id="sendBtn" onclick="send()">전송</button>
     </div>
 
     <script>
         var socket = io();
 
-        function sendMyMessage() {
-            var nick = document.getElementById('nickname').value;
-            var real = document.getElementById('name').value;
-            var msg = document.getElementById('chatInput').value;
-            if(!nick || !real || !msg) return alert("빈칸을 채워주세요!");
+        function send() {
+            var nick = document.getElementById('nickname').value.trim();
+            var real = document.getElementById('name').value.trim();
+            var msg = document.getElementById('chatInput').value.trim();
             
+            if(!nick || !real || !msg) {
+                alert("모든 칸을 채워주세요!");
+                return;
+            }
+
             socket.emit('my_chat', { name: nick, ylm: real, msg: msg });
             document.getElementById('chatInput').value = "";
+            document.getElementById('chatInput').focus();
         }
 
         socket.on('my_chat', function(data) {
-            console.log("받은 데이터:", data); // 브라우저 F12 콘솔에서 데이터 확인용
-        
             var chatBox = document.getElementById('chatBox');
-            if (!chatBox) return; // 채팅창 없으면 중단
-
-            var displayName = data.name || "익명";
-    
-            // ⭐ [체크!] 실명 표시 부분 - 이름이 다르면 안 나옴
-            // 서버에서 'real_name_secret'으로 보냈는지 확인해!
-            if (data.real_name_secret) {
-                displayName += ` <span style="color: #ff5722; font-size: 11px;">(${data.real_name_secret})</span>`;
-            }
-    
-            var html = "";
-            if (data.role === 'system') {
-                html = `<div class="system"><span>${data.msg}</span></div>`;
+            var div = document.createElement('div');
+            
+            if(data.role === 'system') {
+                div.className = "msg system";
+                div.innerText = data.msg;
             } else {
-                var boxClass = (data.role === 'admin') ? 'admin' : 'normal';
-                var msgContent = data.msg || "";
-        
-                // 미디어(유튜브, 이미지 등) 처리
-                var mediaHtml = "";
-                if (data.yt_thumb) {
-                    mediaHtml += `<div class="youtube-preview"><a href="${data.yt_link}" target="_blank"><img src="${data.yt_thumb}"></a></div>`;
+                div.className = "msg " + (data.role === 'admin' ? 'admin' : 'normal');
+                
+                var nameDisplay = data.name;
+                // 관리자에게만 실명이 포함된 데이터가 전달됨
+                if(data.real_name_secret) {
+                    nameDisplay += `<span class="real-name">(${data.real_name_secret})</span>`;
                 }
-                if (data.link_data) {
-                    mediaHtml += `
-                        <a href="${data.link_data.url}" target="_blank" class="link-card">
-                            <img src="${data.link_data.image}">
-                            <div class="link-info">
-                                <div class="link-title">${data.link_data.title}</div>
-                            </div>
-                        </a>`;
+
+                var media = "";
+                if(data.yt_thumb) {
+                    media = `<div class="yt-preview"><a href="${data.yt_link}" target="_blank"><img src="${data.yt_thumb}"></a></div>`;
                 }
-        
-                html = `
-                    <div class="msg-box ${boxClass}">
-                    <span class="nickname">${displayName}</span>
-                    <div class="content-wrapper">
-                    <div class="message">${msgContent}${mediaHtml}</div>
-                </div>
-            </div>`;
-        }
 
-        chatBox.innerHTML += html;
-        chatBox.scrollTop = chatBox.scrollHeight; // 맨 아래로 스크롤
-    });
-
-    socket.on('update_users', function(data) {
-        document.getElementById('userStatus').innerText = "현재 접속: " + data.count + "명 (" + data.users.join(", ") + ")";
-    });
-    // 연결이 끊겼을 때 (서버 점검이나 인터넷 문제 등)
-    socket.on('disconnect', function() {
-        var chatBox = document.getElementById('chatBox');
-        if (chatBox) {
-            chatBox.innerHTML += "<div class='system' style='color:red; font-weight:bold;'>🚫 서버와의 연결이 끊어졌습니다. 새로고침 해주세요.</div>";
+                div.innerHTML = `<span class="nick-label">${nameDisplay}</span>` + 
+                                `<div>${data.msg}${media}</div>` + 
+                                `<span class="time">${data.time || ''}</span>`;
+            }
+            
+            chatBox.appendChild(div);
             chatBox.scrollTop = chatBox.scrollHeight;
-        }
-        // 입력창과 버튼을 비활성화해서 혼란 방지
-        document.getElementById('chatInput').disabled = true;
-        document.getElementById('nickname').disabled = true;
-        document.getElementById('name').disabled = true;
-        document.querySelector('button').disabled = true;
-    });
+        });
 
-    // 서버와 다시 연결되었을 때 (선택 사항)
-    socket.on('connect', function() {
-        console.log("서버에 연결되었습니다.");
-        document.getElementById('chatInput').disabled = false;
-        document.getElementById('nickname').disabled = false;
-        document.getElementById('name').disabled = false;
-        document.querySelector('button').disabled = false;
-    });
-        
+        // 연결 끊김 처리
+        socket.on('disconnect', function() {
+            var chatBox = document.getElementById('chatBox');
+            var div = document.createElement('div');
+            div.className = "msg system";
+            div.style.color = "red";
+            div.style.fontWeight = "bold";
+            div.innerText = "🚫 서버와 연결이 끊겼습니다. 새로고침이 필요합니다.";
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            document.getElementById('chatInput').disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('sendBtn').style.background = "#ccc";
+        });
     </script>
 </body>
 </html>
-
 
