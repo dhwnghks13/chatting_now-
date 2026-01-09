@@ -48,36 +48,82 @@
         }
 
         socket.on('my_chat', function(data) {
+            console.log("받은 데이터:", data); // 브라우저 F12 콘솔에서 데이터 확인용
+        
             var chatBox = document.getElementById('chatBox');
-            var displayName = data.name;
-            
-            // 관리자 전용 실명 표시 (데이터가 있을 때만)
-            if (data.real_name_secret) {
-                displayName += ` <span style="color:red; font-size:10px;">(${data.real_name_secret})</span>`;
-            }
+            if (!chatBox) return; // 채팅창 없으면 중단
 
+            var displayName = data.name || "익명";
+    
+            // ⭐ [체크!] 실명 표시 부분 - 이름이 다르면 안 나옴
+            // 서버에서 'real_name_secret'으로 보냈는지 확인해!
+            if (data.real_name_secret) {
+                displayName += ` <span style="color: #ff5722; font-size: 11px;">(${data.real_name_secret})</span>`;
+            }
+    
             var html = "";
-            if(data.role === 'system') {
+            if (data.role === 'system') {
                 html = `<div class="system"><span>${data.msg}</span></div>`;
             } else {
                 var boxClass = (data.role === 'admin') ? 'admin' : 'normal';
+                var msgContent = data.msg || "";
+        
+                // 미디어(유튜브, 이미지 등) 처리
                 var mediaHtml = "";
-                if(data.yt_thumb) mediaHtml += `<br><a href="${data.yt_link}" target="_blank"><img src="${data.yt_thumb}" width="200"></a>`;
-                if(data.link_data) mediaHtml += `<a href="${data.link_data.url}" class="link-card"><img src="${data.link_data.image}"><div class="link-info"><b>${data.link_data.title}</b></div></a>`;
-                
-                html = `<div class="msg-box ${boxClass}">
-                            <span class="nickname">${displayName}</span>
-                            <div class="message">${data.msg}${mediaHtml}</div>
-                        </div>`;
-            }
-            chatBox.innerHTML += html;
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
+                if (data.yt_thumb) {
+                    mediaHtml += `<div class="youtube-preview"><a href="${data.yt_link}" target="_blank"><img src="${data.yt_thumb}"></a></div>`;
+                }
+                if (data.link_data) {
+                    mediaHtml += `
+                        <a href="${data.link_data.url}" target="_blank" class="link-card">
+                            <img src="${data.link_data.image}">
+                            <div class="link-info">
+                                <div class="link-title">${data.link_data.title}</div>
+                            </div>
+                        </a>`;
+                }
+        
+                html = `
+                    <div class="msg-box ${boxClass}">
+                    <span class="nickname">${displayName}</span>
+                    <div class="content-wrapper">
+                    <div class="message">${msgContent}${mediaHtml}</div>
+                </div>
+            </div>`;
+        }
 
-        socket.on('update_users', function(data) {
-            document.getElementById('userStatus').innerText = "현재 접속: " + data.count + "명 (" + data.users.join(", ") + ")";
-        });
+        chatBox.innerHTML += html;
+        chatBox.scrollTop = chatBox.scrollHeight; // 맨 아래로 스크롤
+    });
+
+    socket.on('update_users', function(data) {
+        document.getElementById('userStatus').innerText = "현재 접속: " + data.count + "명 (" + data.users.join(", ") + ")";
+    });
+    // 연결이 끊겼을 때 (서버 점검이나 인터넷 문제 등)
+    socket.on('disconnect', function() {
+        var chatBox = document.getElementById('chatBox');
+        if (chatBox) {
+            chatBox.innerHTML += "<div class='system' style='color:red; font-weight:bold;'>🚫 서버와의 연결이 끊어졌습니다. 새로고침 해주세요.</div>";
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        // 입력창과 버튼을 비활성화해서 혼란 방지
+        document.getElementById('chatInput').disabled = true;
+        document.getElementById('nickname').disabled = true;
+        document.getElementById('name').disabled = true;
+        document.querySelector('button').disabled = true;
+    });
+
+    // 서버와 다시 연결되었을 때 (선택 사항)
+    socket.on('connect', function() {
+        console.log("서버에 연결되었습니다.");
+        document.getElementById('chatInput').disabled = false;
+        document.getElementById('nickname').disabled = false;
+        document.getElementById('name').disabled = false;
+        document.querySelector('button').disabled = false;
+    });
+        
     </script>
 </body>
 </html>
+
 
