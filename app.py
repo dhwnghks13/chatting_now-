@@ -1,113 +1,104 @@
-import eventlet
-eventlet.monkey_patch()
-
-from flask import Flask, render_template, request
-from flask_socketio import SocketIO, emit, disconnect
-from datetime import datetime, timedelta
-import re
-import requests 
-from bs4 import BeautifulSoup
-
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, cors_allowed_origins="*")
-
-# 메시지 저장용
-messages = []
-# 관리자 비밀번호 리스트
-ADMIN_PWS = ["#064473", "#14141815", "#80278027", "#20150303"]
-# 접속자 장부 { sid: nickname }
-users = {} 
-
-def get_current_time():
-    now = datetime.utcnow() + timedelta(hours=9)
-    return now.strftime('%p %I:%M').replace('AM', '오전').replace('PM', '오후')
-
-def extract_youtube_data(msg):
-    youtube_regex = r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
-    match = re.search(youtube_regex, msg)
-    if match:
-        video_id = match.group(6)
-        return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg", f"https://www.youtube.com/watch?v={video_id}"
-    return None, None
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@socketio.on('connect')
-def handle_connect():
-    users[request.sid] = "익명"
-    # 기존 메시지 불러오기
-    for data in messages:
-        emit('my_chat', data)
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    nick = users.pop(request.sid, "익명")
-    exit_msg = {'role': 'system', 'msg': f'🚪 [{nick}]님이 퇴장하셨습니다.', 'time': get_current_time()}
-    emit('my_chat', exit_msg, broadcast=True)
-
-@socketio.on('my_chat')
-def handle_my_chat(data):
-    original_name = str(data.get('name', '익명'))
-    ylm = str(data.get('ylm', '미기입')) # 실제 사용자가 입력한 실명
-    msg = str(data.get('msg', ''))
-    
-    if not msg.strip(): return
-
-    # 1. 관리자 권한 확인
-    role = 'normal'
-    real_name = original_name
-    is_sender_admin = any(pw in original_name for pw in ADMIN_PWS)
-
-    if is_sender_admin:
-        role = 'admin'
-        # 이름 치환 (옵션)
-        for n in ["오주환", "이다운", "이태윤"]:
-            if n in original_name: real_name = n
-    
-    # 장부 업데이트
-    users[request.sid] = real_name
-
-    # 2. 강퇴 명령어 처리
-    if role == 'admin' and msg.startswith("/강퇴 "):
-        target_name = msg.replace("/강퇴 ", "").strip()
-        target_sid = None
-        for sid, nick in users.items():
-            if nick == target_name:
-                target_sid = sid
-                break
-        if target_sid:
-            disconnect(target_sid)
-            emit('my_chat', {'role': 'system', 'msg': f'🚫 [{target_name}]님이 강퇴당했습니다.'}, broadcast=True)
-        return
-
-    # 유튜브 데이터 추출
-    yt_thumb, yt_link = extract_youtube_data(msg)
-
-    # 기본 응답 주머니 (기본적으로 실명은 뺌)
-    base_res = {
-        'name': real_name, 
-        'msg': msg, 
-        'role': role, 
-        'time': get_current_time(),
-        'yt_thumb': yt_thumb,
-        'yt_link': yt_link
-    }
-    
-    # 서버에 저장 (최근 100개)
-    messages.append(base_res)
-    if len(messages) > 100: messages.pop(0)
-
-    # 3. 모든 접속자에게 개별 전송 (핵심!)
-    for sid, target_nick in users.items():
-        res = base_res.copy()
-        # 받는 사람이 관리자라면 실명 데이터를 끼워줌
-        if any(pw in str(target_nick) for pw in ADMIN_PWS):
-            res['real_name_secret'] = ylm
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💬 실시간 채팅방</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body { font-family: 'Apple SD Gothic Neo', sans-serif; background: #f0f2f5; padding: 20px; margin: 0; }
+        #chatBox { height: 75vh; background: white; border-radius: 12px; overflow-y: auto; padding: 20px; border: 1px solid #ddd; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .input-area { display: flex; gap: 8px; margin-top: 15px; }
+        input { border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 14px; }
+        #nickname { width: 15%; }
+        #name { width: 15%; }
+        #chatInput { flex-grow: 1; }
+        button { background: #2196f3; color: white; border: none; border-radius: 8px; cursor: pointer; padding: 0 20px; font-weight: bold; }
+        button:hover { background: #1976d2; }
         
-        emit('my_chat', res, room=sid)
+        .msg { max-width: 80%; padding: 10px 14px; border-radius: 15px; position: relative; font-size: 15px; word-break: break-all; }
+        .normal { align-self: flex-start; background: #e9efff; color: #333; border-bottom-left-radius: 2px; }
+        .admin { align-self: flex-end; background: #e3f2fd; border: 2px solid #2196f3; color: #1a237e; border-bottom-right-radius: 2px; }
+        .system { align-self: center; background: #f5f5f5; font-size: 12px; color: #777; border-radius: 20px; padding: 5px 15px; }
+        
+        .nick-label { font-size: 12px; font-weight: bold; margin-bottom: 4px; display: block; }
+        .time { font-size: 10px; color: #999; margin-top: 5px; display: block; }
+        .real-name { color: #ff5722; font-weight: normal; font-size: 11px; margin-left: 4px; }
+        .yt-preview img { max-width: 250px; border-radius: 8px; margin-top: 8px; display: block; }
+    </style>
+</head>
+<body>
+    <div id="chatBox"></div>
+    <div class="input-area">
+        <input type="text" id="nickname" placeholder="닉네임">
+        <input type="text" id="name" placeholder="실명(관리자용)">
+        <input type="text" id="chatInput" placeholder="메시지를 입력하세요..." onkeypress="if(event.keyCode==13)send()">
+        <button id="sendBtn" onclick="send()">전송</button>
+    </div>
 
-if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000)
+    <script>
+        var socket = io();
+
+        function send() {
+            var nick = document.getElementById('nickname').value.trim();
+            var real = document.getElementById('name').value.trim();
+            var msg = document.getElementById('chatInput').value.trim();
+            
+            if(!nick || !real || !msg) {
+                alert("모든 칸을 채워주세요!");
+                return;
+            }
+
+            socket.emit('my_chat', { name: nick, ylm: real, msg: msg });
+            document.getElementById('chatInput').value = "";
+            document.getElementById('chatInput').focus();
+        }
+
+        socket.on('my_chat', function(data) {
+            var chatBox = document.getElementById('chatBox');
+            var div = document.createElement('div');
+            
+            if(data.role === 'system') {
+                div.className = "msg system";
+                div.innerText = data.msg;
+            } else {
+                div.className = "msg " + (data.role === 'admin' ? 'admin' : 'normal');
+                
+                var nameDisplay = data.name;
+                // 관리자에게만 실명이 포함된 데이터가 전달됨
+                if(data.real_name_secret) {
+                    nameDisplay += `<span class="real-name">(${data.real_name_secret})</span>`;
+                }
+
+                var media = "";
+                if(data.yt_thumb) {
+                    media = `<div class="yt-preview"><a href="${data.yt_link}" target="_blank"><img src="${data.yt_thumb}"></a></div>`;
+                }
+
+                div.innerHTML = `<span class="nick-label">${nameDisplay}</span>` + 
+                                `<div>${data.msg}${media}</div>` + 
+                                `<span class="time">${data.time || ''}</span>`;
+            }
+            
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        // 연결 끊김 처리
+        socket.on('disconnect', function() {
+            var chatBox = document.getElementById('chatBox');
+            var div = document.createElement('div');
+            div.className = "msg system";
+            div.style.color = "red";
+            div.style.fontWeight = "bold";
+            div.innerText = "🚫 서버와 연결이 끊겼습니다. 새로고침이 필요합니다.";
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            document.getElementById('chatInput').disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('sendBtn').style.background = "#ccc";
+        });
+    </script>
+</body>
+</html>
