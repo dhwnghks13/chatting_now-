@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>관리자 보안 채팅방</title>
+    <title>채팅방</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
         body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
@@ -24,7 +24,7 @@
 <body>
     <div id="chatBox"></div>
     <div class="input-area">
-        <input type="text" id="nickname" placeholder="닉네임#비번" style="width:15%">
+        <input type="text" id="nickname" placeholder="닉네임" style="width:15%">
         <input type="text" id="name" placeholder="실명입력" style="width:15%">
         <input type="text" id="chatInput" placeholder="메시지 입력..." style="flex-grow:1" onkeypress="if(event.keyCode==13)send()">
         <button onclick="send()">전송</button>
@@ -72,3 +72,4 @@
     </script>
 </body>
 </html>
+
