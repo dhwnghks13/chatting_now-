@@ -7,24 +7,17 @@ from datetime import datetime, timedelta
 import re
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'chat_secret_key'
+app.config['SECRET_KEY'] = 'final_safe_key_2026'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 messages = []
 ADMIN_PWS = ["#064473", "#14141815", "#80278027", "#20150303"]
+# 유저 장부: { sid: {'display': '보여지는이름', 'raw': '비번포함이름', 'is_admin': True/False} }
 users = {} 
 
 def get_current_time():
     now = datetime.utcnow() + timedelta(hours=9)
     return now.strftime('%p %I:%M').replace('AM', '오전').replace('PM', '오후')
-
-def extract_youtube_data(msg):
-    youtube_regex = r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
-    match = re.search(youtube_regex, msg)
-    if match:
-        video_id = match.group(6)
-        return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg", f"https://www.youtube.com/watch?v={video_id}"
-    return None, None
 
 @app.route('/')
 def index():
@@ -32,60 +25,69 @@ def index():
 
 @socketio.on('connect')
 def handle_connect():
-    users[request.sid] = "익명"
+    users[request.sid] = {'display': '익명', 'raw': '익명', 'is_admin': False}
     for data in messages:
         emit('my_chat', data)
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    nick = users.pop(request.sid, "익명")
-    exit_msg = {'role': 'system', 'msg': f'🚪 [{nick}]님이 퇴장하셨습니다.', 'time': get_current_time()}
-    emit('my_chat', exit_msg, broadcast=True)
+    user_info = users.pop(request.sid, {'display': '익명'})
+    emit('my_chat', {'role': 'system', 'msg': f'🚪 [{user_info["display"]}]님이 퇴장하셨습니다.'}, broadcast=True)
 
 @socketio.on('my_chat')
 def handle_my_chat(data):
-    original_name = str(data.get('name', '익명')).strip()
+    raw_nick = str(data.get('name', '익명')).strip()
     ylm = str(data.get('ylm', '미기입')).strip()
     msg = str(data.get('msg', '')).strip()
+    
     if not msg: return
 
-    role = 'normal'
-    real_nickname = original_name
-    is_sender_admin = any(pw in original_name for pw in ADMIN_PWS)
-
+    # 1. 관리자 판별 및 이름 설정
+    is_sender_admin = any(pw in raw_nick for pw in ADMIN_PWS)
+    role = 'admin' if is_sender_admin else 'normal'
+    
+    display_name = raw_nick
     if is_sender_admin:
-        role = 'admin'
         for n in ["오주환", "이다운", "이태윤"]:
-            if n in original_name: 
-                real_nickname = n
+            if n in raw_nick:
+                display_name = n + " ✔️(Official)" # 체크 표시 추가
                 break
     
-    users[request.sid] = real_nickname
+    # 장부 업데이트 (강퇴 시 검색을 위해 비번 포함 raw 이름도 저장)
+    users[request.sid] = {'display': display_name, 'raw': raw_nick, 'is_admin': is_sender_admin}
 
-    if role == 'admin' and msg.startswith("/강퇴 "):
+    # 2. 강퇴 기능 (관리자만 가능)
+    if is_sender_admin and msg.startswith("/강퇴 "):
         target_name = msg.replace("/강퇴 ", "").strip()
         target_sid = None
-        for sid, nick in users.items():
-            if nick == target_name:
+        
+        # 장부에서 이름 검색 (체크 표시가 있는 이름이나 없는 이름 모두 대응)
+        for sid, info in users.items():
+            clean_nick = info['display'].replace(" ✔️(Official)", "").strip()
+            if clean_nick == target_name or info['display'] == target_name:
                 target_sid = sid
                 break
+        
         if target_sid:
             disconnect(target_sid)
-            emit('my_chat', {'role': 'system', 'msg': f'🚫 [{target_name}]님이 강퇴당했습니다.'}, broadcast=True)
+            emit('my_chat', {'role': 'system', 'msg': f'🚫 [{target_name}]님이 관리자에 의해 강퇴되었습니다.'}, broadcast=True)
             return
 
-    yt_thumb, yt_link = extract_youtube_data(msg)
+    # 메시지 주머니
     base_res = {
-        'name': real_nickname, 'msg': msg, 'role': role, 
-        'time': get_current_time(), 'yt_thumb': yt_thumb, 'yt_link': yt_link
+        'name': display_name, 
+        'msg': msg, 
+        'role': role, 
+        'time': get_current_time()
     }
     
     messages.append(base_res)
     if len(messages) > 100: messages.pop(0)
 
-    for sid, target_nick_with_pw in users.items():
+    # 3. 개별 전송 (받는 사람이 관리자인 경우에만 실명 추가)
+    for sid, info in users.items():
         res = base_res.copy()
-        if any(pw in str(target_nick_with_pw) for pw in ADMIN_PWS):
+        if info['is_admin']: # 장부에 기록된 관리자 여부 확인
             res['real_name_secret'] = ylm
         emit('my_chat', res, room=sid)
 
