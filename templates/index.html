@@ -5,23 +5,24 @@
     <title>채팅방</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
-        #chatBox { height: 75vh; background: white; border-radius: 12px; overflow-y: auto; padding: 15px; border: 1px solid #ccc; display: flex; flex-direction: column; gap: 10px; }
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; margin: 0; }
+        /* 접속자 리스트 스타일 */
+        #userStatus { background: #333; color: white; padding: 10px 20px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; }
+        #chatBox { height: 70vh; background: white; border-radius: 12px; overflow-y: auto; padding: 15px; border: 1px solid #ccc; display: flex; flex-direction: column; gap: 10px; }
         .input-area { display: flex; gap: 8px; margin-top: 10px; }
         input { border: 1px solid #ddd; border-radius: 6px; padding: 10px; }
         button { background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0 20px; font-weight: bold; }
         
-        .msg { max-width: 75%; padding: 10px; border-radius: 10px; font-size: 14px; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .normal { align-self: flex-start; background: #ffffff; color: #333; }
-        .admin { align-self: flex-end; background: #e3f2fd; border: 2px solid #007bff !important; color: #0d47a1; }
-        .system { align-self: center; background: #fff3cd; color: #856404; font-size: 12px; padding: 4px 12px; border-radius: 15px; }
-        
+        .msg { max-width: 75%; padding: 10px; border-radius: 10px; font-size: 14px; position: relative; }
+        .normal { align-self: flex-start; background: #ffffff; border: 1px solid #eee; }
+        .admin { align-self: flex-end; background: #e3f2fd; border: 2px solid #007bff !important; }
+        .system { align-self: center; background: #fff3cd; color: #856404; font-size: 11px; padding: 4px 12px; border-radius: 15px; }
         .nick-label { font-size: 11px; font-weight: bold; margin-bottom: 4px; display: block; }
-        .real-name { color: #ff5722; font-weight: bold; font-size: 12px; margin-left: 5px; }
-        .time { font-size: 9px; color: #999; display: block; margin-top: 5px; }
+        .real-name { color: #ff5722; font-weight: bold; }
     </style>
 </head>
 <body>
+    <div id="userStatus">접속자 불러오는 중...</div>
     <div id="chatBox"></div>
     <div class="input-area">
         <input type="text" id="nickname" placeholder="닉네임" style="width:15%">
@@ -32,11 +33,12 @@
 
     <script>
         var socket = io();
+
         function send() {
             var nick = document.getElementById('nickname').value.trim();
             var real = document.getElementById('name').value.trim();
             var msg = document.getElementById('chatInput').value.trim();
-            if(!nick || !real || !msg) return alert("닉네임, 실명, 메시지를 모두 입력하세요!");
+            if(!nick || !real || !msg) return alert("다 입력해!");
             socket.emit('my_chat', { name: nick, ylm: real, msg: msg });
             document.getElementById('chatInput').value = "";
         }
@@ -44,32 +46,29 @@
         socket.on('my_chat', function(data) {
             var chatBox = document.getElementById('chatBox');
             var div = document.createElement('div');
-            
             if(data.role === 'system') {
                 div.className = "msg system";
                 div.innerText = data.msg;
             } else {
                 div.className = "msg " + (data.role === 'admin' ? 'admin' : 'normal');
                 var nameDisplay = data.name;
-                
-                // 관리자에게만 실명이 포함된 데이터가 전달됨
-                if(data.real_name_secret) {
-                    nameDisplay += ` <span class="real-name">[실명: ${data.real_name_secret}]</span>`;
-                }
-                
-                div.innerHTML = `<span class="nick-label">${nameDisplay}</span>` + 
-                                `<div>${data.msg}</div>` + 
-                                `<span class="time">${data.time || ''}</span>`;
+                if(data.real_name_secret) nameDisplay += ` <span class="real-name">[실명: ${data.real_name_secret}]</span>`;
+                div.innerHTML = `<span class="nick-label">${nameDisplay}</span><div>${data.msg}</div>`;
             }
             chatBox.appendChild(div);
             chatBox.scrollTop = chatBox.scrollHeight;
         });
 
+        // 서버에서 접속자 명단을 보내줄 때 처리
+        socket.on('update_users', function(data) {
+            var statusDiv = document.getElementById('userStatus');
+            statusDiv.innerText = "현재 접속: " + data.count + "명 | 리스트: " + data.users.join(", ");
+        });
+
         socket.on('disconnect', function() {
-            alert("서버와 연결이 끊겼습니다.");
+            alert("서버와 연결 끊김!");
             location.reload();
         });
     </script>
 </body>
 </html>
-
