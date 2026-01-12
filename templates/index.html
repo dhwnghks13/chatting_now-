@@ -10,6 +10,16 @@
         #chatBox { height: 75vh; background: white; border-radius: 12px; overflow-y: auto; padding: 20px; border: 1px solid #ddd; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .input-area { display: flex; gap: 8px; margin-top: 15px; }
         input { border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 14px; }
+        /* 채팅창 위에 접속자 명단이 뜰 수 있게 네 스타일 시트에 추가해 */
+        #status { 
+            font-size: 13px; 
+            color: #555; 
+            margin-bottom: 10px; 
+            background: #fff; 
+            padding: 8px; 
+            border-radius: 8px; 
+            border: 1px solid #ddd;
+        }
         #nickname { width: 15%; }
         #name { width: 15%; }
         #chatInput { flex-grow: 1; }
@@ -31,9 +41,10 @@
     <div id="chatBox"></div>
     <div class="input-area">
         <input type="text" id="nickname" placeholder="닉네임">
-        <input type="text" id="name" placeholder="실명(관리자용)">
+        <input type="text" id="name" placeholder="실명(입력 제대로 안하면 강퇴)">
         <input type="text" id="chatInput" placeholder="메시지를 입력하세요..." onkeypress="if(event.keyCode==13)send()">
         <button id="sendBtn" onclick="send()">전송</button>
+        <div id="status">👥 접속 중: 확인 중...</div>
     </div>
 
     <script>
@@ -102,3 +113,4 @@
     </script>
 </body>
 </html>
+
