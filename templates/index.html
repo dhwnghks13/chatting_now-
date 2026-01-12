@@ -2,43 +2,50 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>채팅방</title>
+    <title>우리들의 채팅방</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; margin: 0; }
-        /* 접속자 리스트 스타일 */
-        #userStatus { background: #333; color: white; padding: 10px 20px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; }
-        #chatBox { height: 70vh; background: white; border-radius: 12px; overflow-y: auto; padding: 15px; border: 1px solid #ccc; display: flex; flex-direction: column; gap: 10px; }
-        .input-area { display: flex; gap: 8px; margin-top: 10px; }
-        input { border: 1px solid #ddd; border-radius: 6px; padding: 10px; }
-        button { background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 0 20px; font-weight: bold; }
+        body { font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; background-color: #b2c7da; margin: 0; padding: 10px; }
+        #status { background: rgba(0,0,0,0.3); color: white; padding: 8px 15px; border-radius: 20px; font-size: 12px; margin-bottom: 10px; text-align: center; }
+        #chatBox { height: 75vh; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
         
-        .msg { max-width: 75%; padding: 10px; border-radius: 10px; font-size: 14px; position: relative; }
-        .normal { align-self: flex-start; background: #ffffff; border: 1px solid #eee; }
-        .admin { align-self: flex-end; background: #e3f2fd; border: 2px solid #007bff !important; }
-        .system { align-self: center; background: #fff3cd; color: #856404; font-size: 11px; padding: 4px 12px; border-radius: 15px; }
-        .nick-label { font-size: 11px; font-weight: bold; margin-bottom: 4px; display: block; }
-        .real-name { color: #ff5722; font-weight: bold; }
+        .msg { max-width: 70%; padding: 10px 15px; border-radius: 15px; font-size: 14px; line-height: 1.4; position: relative; word-break: break-all; }
+        
+        /* 일반 유저: 왼쪽 흰색 말풍선 */
+        .normal { align-self: flex-start; background-color: #ffffff; color: #000; border-top-left-radius: 0; box-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        
+        /* 관리자: 오른쪽 노란색 말풍선 (파란 테두리 포함) */
+        .admin { align-self: flex-end; background-color: #fee500; color: #000; border-top-right-radius: 0; border: 2px solid #007bff !important; box-shadow: -1px 1px 2px rgba(0,0,0,0.1); }
+        
+        /* 시스템 메시지: 중앙 노란 박스 */
+        .system { align-self: center; background-color: rgba(0,0,0,0.1); color: #ffffff; font-size: 11px; padding: 5px 15px; border-radius: 20px; border: none; text-align: center; white-space: pre-wrap; }
+        
+        .nick-label { font-size: 12px; font-weight: bold; display: block; margin-bottom: 4px; color: #333; }
+        .admin .nick-label { text-align: right; }
+        .real-name { color: #ff5722; font-weight: bold; font-size: 11px; }
+
+        .input-area { display: flex; gap: 5px; margin-top: 10px; background: white; padding: 10px; border-radius: 5px; }
+        input { border: 1px solid #ddd; padding: 10px; border-radius: 5px; outline: none; }
+        button { background: #fee500; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; padding: 0 15px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div id="userStatus">접속자 불러오는 중...</div>
+    <div id="status">접속자 불러오는 중...</div>
     <div id="chatBox"></div>
     <div class="input-area">
-        <input type="text" id="nickname" placeholder="닉네임" style="width:15%">
-        <input type="text" id="name" placeholder="실명입력" style="width:15%">
+        <input type="text" id="nickname" placeholder="닉네임#비번" style="width:20%">
+        <input type="text" id="name" placeholder="실명" style="width:15%">
         <input type="text" id="chatInput" placeholder="메시지 입력..." style="flex-grow:1" onkeypress="if(event.keyCode==13)send()">
         <button onclick="send()">전송</button>
     </div>
 
     <script>
         var socket = io();
-
         function send() {
-            var nick = document.getElementById('nickname').value.trim();
-            var real = document.getElementById('name').value.trim();
-            var msg = document.getElementById('chatInput').value.trim();
-            if(!nick || !real || !msg) return alert("다 입력해!");
+            var nick = document.getElementById('nickname').value;
+            var real = document.getElementById('name').value;
+            var msg = document.getElementById('chatInput').value;
+            if(!nick || !real || !msg) return;
             socket.emit('my_chat', { name: nick, ylm: real, msg: msg });
             document.getElementById('chatInput').value = "";
         }
@@ -51,23 +58,27 @@
                 div.innerText = data.msg;
             } else {
                 div.className = "msg " + (data.role === 'admin' ? 'admin' : 'normal');
-                var nameDisplay = data.name;
-                if(data.real_name_secret) nameDisplay += ` <span class="real-name">[실명: ${data.real_name_secret}]</span>`;
-                div.innerHTML = `<span class="nick-label">${nameDisplay}</span><div>${data.msg}</div>`;
+                var n = data.name;
+                if(data.real_name_secret) n += ` <span class="real-name">[${data.real_name_secret}]</span>`;
+                div.innerHTML = `<span class="nick-label">${n}</span>${data.msg}`;
             }
             chatBox.appendChild(div);
             chatBox.scrollTop = chatBox.scrollHeight;
         });
 
-        // 서버에서 접속자 명단을 보내줄 때 처리
         socket.on('update_users', function(data) {
-            var statusDiv = document.getElementById('userStatus');
-            statusDiv.innerText = "현재 접속: " + data.count + "명 | 리스트: " + data.users.join(", ");
+            document.getElementById('status').innerText = "접속: " + data.count + "명 | " + data.users.join(", ");
         });
 
-        socket.on('disconnect', function() {
-            alert("서버와 연결 끊김!");
-            location.reload();
+        socket.on('disconnect', () => { 
+            const chatBox = document.getElementById('chatBox');
+            const div = document.createElement('div');
+            div.className = "msg system";
+            div.style.backgroundColor = "red";
+            div.innerText = "🚫 연결이 끊겼어! 새로고침해줘.";
+            chatBox.appendChild(div);
+            alert("서버와 연결이 끊겼어!"); 
+            location.reload(); 
         });
     </script>
 </body>
