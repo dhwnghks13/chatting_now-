@@ -71,7 +71,7 @@
             
             if(data.role === 'system') {
                 div.className = "msg system";
-                div.innerText = data.msg;
+                div.innerHTML = data.msg;  // innerText를 innerHTML로 변경!
             } else {
                 div.className = "msg " + (data.role === 'admin' ? 'admin' : 'normal');
                 
