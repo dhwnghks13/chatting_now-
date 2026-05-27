@@ -6,13 +6,19 @@
     <title>💬 채팅방</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        /* 전체 배경 및 중앙 정렬 */
+        /* 1. 깃허브/로컬 static 폴더에 넣은 폰트 불러오기 */
+        @font-face {
+            font-family: 'Hakgyoansim';
+            src: url('/static/fonts/Hakgyoansim_YieodalligiL.ttf') format('truetype');
+        }
+
+        /* 전체 배경 및 중앙 정렬 (폰트 적용) */
         body { 
-            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; 
-            background: #e9ecef; /* 살짝 차분한 배경색 */
+            font-family: 'Hakgyoansim', 'Apple SD Gothic Neo', sans-serif; /* 폰트 적용 완료! */
+            background: #e9ecef; 
             margin: 0; 
             display: flex; 
-            justify-content: center; /* 화면 가운데 정렬 */
+            justify-content: center; 
             height: 100vh; 
             box-sizing: border-box;
         }
@@ -20,7 +26,7 @@
         /* 채팅방 전체를 감싸는 컨테이너 */
         #chat-wrapper {
             width: 100%;
-            max-width: 800px; /* PC에서도 너무 넓어지지 않게 최대 너비 제한 */
+            max-width: 800px; 
             display: flex;
             flex-direction: column;
             height: 100%;
@@ -28,7 +34,7 @@
             box-sizing: border-box;
         }
 
-        /* 상태창 (접속자 명단) - 상단으로 이동해서 깔끔하게 */
+        /* 상태창 (접속자 명단) */
         #status { 
             font-size: 14px; 
             color: #495057; 
@@ -55,7 +61,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
         }
 
-        /* 입력창 영역 (하단) */
+        /* 입력창 영역 (하단 2줄 배치) */
         .input-area { 
             background: white; 
             border-radius: 12px; 
@@ -76,17 +82,17 @@
             padding: 12px; 
             font-size: 14px; 
             outline: none;
-            transition: border 0.2s;
+            font-family: 'Hakgyoansim', sans-serif; /* 입력창에도 폰트 적용 */
         }
         input:focus { border-color: #2196f3; }
         
-        #nickname, #name { flex: 1; } /* 닉네임, 실명 칸을 반반 차지하게 */
-        #chatInput { flex-grow: 1; }  /* 채팅창은 남은 공간 다 차지하게 */
+        #nickname, #name { width: 50%; } 
+        #chatInput { flex-grow: 1; }  
         
         button { 
             background: #2196f3; color: white; border: none; border-radius: 8px; 
             cursor: pointer; padding: 0 24px; font-weight: bold; font-size: 15px;
-            transition: background 0.2s;
+            font-family: 'Hakgyoansim', sans-serif;
         }
         button:hover { background: #1976d2; }
 
@@ -96,11 +102,11 @@
         /* 일반 유저 (왼쪽) */
         .normal { align-self: flex-start; background: #f1f3f5; color: #212529; border-top-left-radius: 4px; }
         
-        /* 관리자 (오른쪽 - 파란색 테마) */
+        /* 관리자 (오른쪽) */
         .admin { align-self: flex-end; background: #e3f2fd; color: #0d47a1; border-top-right-radius: 4px; border: 1px solid #bbdefb; }
         
-        /* 시스템/공지 (가운데) */
-        .system { align-self: center; background: #fff3cd; color: #856404; font-size: 13px; font-weight: bold; border-radius: 20px; padding: 8px 20px; border: 1px solid #ffeeba; }
+        /* 시스템/공지/설문 (가운데 노란 상자) */
+        .system { align-self: center; background: #fff3cd; color: #856404; font-size: 13px; font-weight: bold; border-radius: 20px; padding: 8px 20px; border: 1px solid #ffeeba; text-align: center; }
 
         .nick-label { font-size: 12px; font-weight: bold; margin-bottom: 6px; display: block; color: #495057; }
         .time { font-size: 11px; color: #adb5bd; margin-top: 6px; display: block; text-align: right; }
@@ -154,7 +160,7 @@
             
             if(data.role === 'system') {
                 div.className = "msg system";
-                div.innerHTML = data.msg;
+                div.innerHTML = data.msg; // 2. innerHTML로 변경하여 설문 링크 클릭 가능하게 수정!
             } else {
                 div.className = "msg " + (data.role === 'admin' ? 'admin' : 'normal');
                 
