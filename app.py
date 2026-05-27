@@ -72,7 +72,11 @@ def handle_my_chat(data):
         # 2. 설문 명령어 (지정된 구글 폼 링크)
         if msg.startswith("/설문 "):
             link = "https://docs.google.com/forms/d/e/1FAIpQLScWASCN8at3BE6U15UERFZX7VZ_zGafL6FT_IHed41J3T-Xug/viewform?usp=dialog"
-            emit('my_chat', {'role': 'system', 'msg': f'📝 [설문 시작]\n링크: {link}\n참여부탁'}, broadcast=True)
+            
+            # \n 대신 <br>을 쓰고, 링크를 <a> 태그로 감싸기! (target="_blank"는 새 창에서 열리게 해줘)
+            html_msg = f'📝 [설문 시작]<br>링크: <a href="{link}" target="_blank" style="color: #2196f3; font-weight: bold; text-decoration: underline;">여기를 눌러서 설문 참여하기</a><br>참여부탁'
+            
+            emit('my_chat', {'role': 'system', 'msg': html_msg}, broadcast=True)
             return
         
         # 3. 강퇴 명령어 (all 또는 특정 닉네임)
